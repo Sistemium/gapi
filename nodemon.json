@@ -1,0 +1,12 @@
+{
+  "env": {
+    "DEBUG": "stm:*",
+    "MONGOOSE_DEBUG": "",
+    "MONGO_URL": "mng2.sistemium.net/bsClient",
+    "MONGO_URL_1C": "mng1.sistemium.net/bs",
+    "DEBUG_NAMESPACE": "stm:g",
+    "ERROR_NAMESPACE": "stm:g:error",
+    "REST_PORT": "9900"
+  },
+  "ignore": ["static"]
+}
