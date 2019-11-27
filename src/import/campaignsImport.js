@@ -1,24 +1,100 @@
 import log from 'sistemium-telegram/services/log';
-import fpOmit from 'lodash/fp/omit';
+// import fpOmit from 'lodash/fp/omit';
+import lo from 'lodash';
+import Anywhere from 'sistemium-sqlanywhere';
 
+import { toDateString } from '../lib/dates';
 import Campaign from '../models/Campaign';
 
 const { debug } = log('import:campaigns');
 
-const omitId = fpOmit('_id');
+// const omitId = fpOmit('_id');
 
 export default async function (model) {
 
-  const raw = await model.find();
+  const raw = await model.find({
+    variants: { $not: { $size: 0 } },
+    'variants.conditions.articles': { $not: { $size: 0 } },
+  });
 
-  debug('raw', raw.length);
+  debug('raw', raw[10]);
 
-  const data = raw.map(item => omitId({ ...item.toObject(), id: item.id }));
+  const data = raw.map(importCampaign);
 
   const merged = await Campaign.merge(data);
 
-  debug('merged', merged.length, merged[10]);
+  debug('merged', merged.length, merged[10], data[10]);
 
-  return Promise.resolve(null);
+  await importOld();
+
+}
+
+function importCampaign(rawCampaign) {
+
+  const campaign = rawCampaign.toObject();
+
+  const variants = lo.map(campaign.variants, importVariant);
+
+  return {
+    ...lo.pick(campaign, ['code', 'name', 'discount']),
+    id: rawCampaign.id,
+    dateB: toDateString(campaign.dateB),
+    dateE: toDateString(campaign.dateE),
+    source: 'new',
+    isActive: true,
+    commentText: null,
+    variants,
+  };
+
+}
+
+function importVariant({ name, conditions }) {
+
+  const articleIds = conditions.map(({ articles }) => {
+    const ids = lo.map(articles, article => {
+      const { articleId, sameArticleIds } = article;
+      return [articleId, ...sameArticleIds];
+    });
+    return lo.uniq(lo.flatten(ids));
+  });
+
+  return {
+    name,
+    articleIds: lo.uniq(lo.flatten(articleIds)),
+  };
+
+}
+
+
+const SELECT_CAMPAIGNS = `SELECT
+    uuidToStr(xid) as id, name, commentText, isActive, dateB, dateE,
+    (select max(xid) from bs.ActivityPeriod ap
+          where not (date(cmp.dateE) < dateB or date(cmp.dateB) > dateE)
+    ) as [campaignGroupId]
+  FROM ch.Campaign as [cmp]
+  WHERE dateE >= dateAdd(month, -2, today())
+  ORDER BY cmp.ts
+`;
+
+async function importOld() {
+
+  const conn = new Anywhere();
+  await conn.connect();
+  debug('connected');
+
+  const data = await conn.execImmediate(SELECT_CAMPAIGNS);
+
+  debug('importOld:source', data.length);
+
+  const merged = await Campaign.merge(data.map(item => ({
+    ...item,
+    source: 'old',
+    discount: null,
+  })));
+
+  debug('importOld:merged', merged.length);
+
+  await conn.disconnect();
+  debug('disconnected');
 
 }

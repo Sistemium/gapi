@@ -5,6 +5,13 @@ export default new ModelSchema({
   schema: {
     name: String,
     code: String,
+    dateB: String,
+    dateE: String,
+    discount: Number,
+    variants: Array,
+    commentText: String,
+    isActive: Boolean,
+    source: String,
   },
   tsType: 'timestamp',
 }).model();
