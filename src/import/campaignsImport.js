@@ -36,7 +36,7 @@ function importCampaign(rawCampaign) {
   const variants = lo.map(campaign.variants, importVariant);
 
   return {
-    ...lo.pick(campaign, ['code', 'name', 'discount']),
+    ...lo.pick(campaign, ['code', 'name', 'discount', 'restrictions']),
     id: rawCampaign.id,
     dateB: toDateString(campaign.dateB),
     dateE: toDateString(campaign.dateE),
@@ -48,7 +48,7 @@ function importCampaign(rawCampaign) {
 
 }
 
-function importVariant({ name, conditions }) {
+function importVariant({ name, conditions, id }) {
 
   const articleIds = conditions.map(({ articles }) => {
     const ids = lo.map(articles, article => {
@@ -59,6 +59,7 @@ function importVariant({ name, conditions }) {
   });
 
   return {
+    id,
     name,
     articleIds: lo.uniq(lo.flatten(articleIds)),
   };

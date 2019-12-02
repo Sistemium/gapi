@@ -12,6 +12,7 @@ export default new ModelSchema({
     commentText: String,
     isActive: Boolean,
     source: String,
+    restrictions: Object,
   },
   tsType: 'timestamp',
 }).model();
