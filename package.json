@@ -18,7 +18,7 @@
     "esm": "^3.2.18",
     "koa-router": "^7.4.0",
     "lodash": "^4.17.11",
-    "sistemium-mongo": "^1.2.1",
+    "sistemium-mongo": "^1.2.3",
     "sistemium-sqlanywhere": "^1.0.0",
     "sistemium-telegram": "^1.2.10"
   },
