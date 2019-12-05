@@ -17,8 +17,6 @@ export default async function (model) {
     'variants.conditions.articles': { $not: { $size: 0 } },
   });
 
-  debug('raw', raw[0]);
-
   const data = raw.map(importCampaign);
 
   const merged = await Campaign.mergeIfChanged(data);
