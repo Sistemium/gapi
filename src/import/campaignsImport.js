@@ -17,13 +17,13 @@ export default async function (model) {
     'variants.conditions.articles': { $not: { $size: 0 } },
   });
 
-  debug('raw', raw[10]);
+  debug('raw', raw[0]);
 
   const data = raw.map(importCampaign);
 
-  const merged = await Campaign.merge(data);
+  const merged = await Campaign.mergeIfChanged(data);
 
-  debug('merged', merged.length, merged[10], data[10]);
+  debug('merged', merged.length, merged[0]);
 
   await importOld();
 
@@ -77,7 +77,7 @@ const SELECT_CAMPAIGNS = `SELECT
   ORDER BY cmp.ts
 `;
 
-async function importOld() {
+export async function importOld() {
 
   const conn = new Anywhere();
   await conn.connect();
@@ -87,7 +87,7 @@ async function importOld() {
 
   debug('importOld:source', data.length);
 
-  const merged = await Campaign.merge(data.map(item => ({
+  const merged = await Campaign.mergeIfChanged(data.map(item => ({
     ...item,
     source: 'old',
     discount: null,
