@@ -23,7 +23,7 @@ export default async function (model) {
 
   const merged = await Campaign.mergeIfChanged(data);
 
-  debug('merged', merged.length, merged[0]);
+  debug('merged', merged.length, 'of', raw.length);
 
   await importOld();
 
@@ -93,7 +93,7 @@ export async function importOld() {
     discount: null,
   })));
 
-  debug('importOld:merged', merged.length);
+  debug('importOld:merged', merged.length, 'of', data.length);
 
   await conn.disconnect();
   debug('disconnected');
