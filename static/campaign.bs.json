@@ -1,0 +1,73 @@
+{
+  "_id" : "ef819060-9bc5-11e9-94f7-005056851d41",
+  "code" : "БС0007089",
+  "cts" : "2019-11-20T08:43:57.605Z",
+  "dateB" : "2019-07-01T00:00:00",
+  "dateE" : "2019-12-31T00:00:00",
+  "name" : "Пакет 2_10%",
+  "parentId" : "a8c5d9bc-9af7-11e9-94f7-005056851d41",
+  "repeatCount" : 1,
+  "shipWithOrder" : false,
+  "ts" : "2019-12-09T05:00:43.240Z",
+  "type" : "Единовременная",
+  "variants" : [
+    {
+      "id" : "ef819061-9bc5-11e9-94f7-005056851d41",
+      "name" : "Пакет 1_6%",
+      "code" : "БС0006766",
+      "priority" : 0,
+      "repeatCount" : 0,
+      "conditions" : [
+        {
+          "name" : "Пакет 1_6%",
+          "qty" : 0,
+          "qtyPercent" : 100,
+          "volume" : 5,
+          "volumePercent" : 100,
+          "sum" : 0,
+          "sumPercent" : 100,
+          "skuCount" : 5,
+          "articles" : [
+            {
+              "articleId" : "906b26ea-659f-11e2-9feb-c8600001e2d7",
+              "byArticles" : false,
+              "byQty" : false,
+              "byVolume" : true,
+              "bySKU" : false,
+              "bySum" : false,
+              "skuCount" : 0,
+              "sameArticleIds" : [
+                "d48ba67b-65eb-11e2-9feb-c8600001e2d7",
+                "d48ba67e-65eb-11e2-9feb-c8600001e2d7",
+                "92a0ca2b-6ec4-11e2-8ae6-c8600001e2d7",
+                "e5ec9d06-65f1-11e2-9feb-c8600001e2d7",
+                "92a0ca28-6ec4-11e2-8ae6-c8600001e2d7",
+                "77680270-b0a1-11e2-bfd7-c8600001e2d7",
+                "4a45526e-6d5b-11e2-8ae6-c8600001e2d7",
+                "9b97846b-9c90-11e2-8c1e-c8600001e2d7",
+                "c62e32a6-3a14-11e3-af5b-c8600001e2d7",
+                "23324fae-ecb0-11e8-94f4-005056851d41",
+                "d48ba681-65eb-11e2-9feb-c8600001e2d7",
+                "92a0ca31-6ec4-11e2-8ae6-c8600001e2d7",
+                "9711ef7b-fd8d-11e6-94df-005056851d41",
+                "c5c9431e-150b-11e7-94e1-005056851d41",
+                "9711ef7e-fd8d-11e6-94df-005056851d41",
+                "9711ef81-fd8d-11e6-94df-005056851d41",
+                "39313024-e5a9-11e9-9500-005056851d41",
+                "39313027-e5a9-11e9-9500-005056851d41",
+                "92a0ca34-6ec4-11e2-8ae6-c8600001e2d7",
+                "ff50803f-07e3-11e8-94e8-005056851d41",
+                "3b7c8f62-b49e-11e7-94e6-005056851d41",
+                "b7478b85-0772-11ea-9501-005056851d41"
+              ]
+            }
+          ]
+        }
+      ],
+      "bonuses" : []
+    }
+  ],
+  "discount" : 10,
+  "discountAgent" : 14,
+  "site" : 1
+}

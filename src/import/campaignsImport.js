@@ -57,6 +57,14 @@ function conditionsArticleIds(condition) {
   return lo.uniq([articleId, ...sameArticleIds]);
 }
 
+function conditionToArticle(condition) {
+  return lo.map(condition.articles, a => ({
+    id: a.articleId,
+    articleIds: conditionsArticleIds(a),
+    discount: discountFull(a),
+  }));
+}
+
 export function importVariant({ name, conditions, id }) {
 
   const articleIds = conditions.map(({ articles }) => {
@@ -64,13 +72,7 @@ export function importVariant({ name, conditions, id }) {
     return lo.uniq(lo.flatten(ids));
   });
 
-  const articles = lo.flatten(lo.map(conditions, condition => {
-    return lo.map(condition.articles, a => ({
-      id: a.articleId,
-      articleIds: conditionsArticleIds(a),
-      discount: discountFull(a),
-    }));
-  }));
+  const articles = lo.flatten(lo.map(conditions, conditionToArticle));
 
   return {
     id,
