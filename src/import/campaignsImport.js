@@ -19,9 +19,11 @@ export default async function (model) {
 
   const data = raw.map(importCampaign);
 
+  debug('source', raw.length);
+
   const merged = await Campaign.mergeIfChanged(data);
 
-  debug('merged', merged.length, 'of', raw.length);
+  debug('merged', merged.length);
 
   await importOld();
 
@@ -46,19 +48,34 @@ function importCampaign(rawCampaign) {
 
 }
 
-function importVariant({ name, conditions, id }) {
+function discountFull({ discountOwn, discountComp }) {
+  return (discountOwn || 0) + (discountComp || 0);
+}
+
+function conditionsArticleIds(condition) {
+  const { articleId, sameArticleIds } = condition;
+  return lo.uniq([articleId, ...sameArticleIds]);
+}
+
+export function importVariant({ name, conditions, id }) {
 
   const articleIds = conditions.map(({ articles }) => {
-    const ids = lo.map(articles, article => {
-      const { articleId, sameArticleIds } = article;
-      return [articleId, ...sameArticleIds];
-    });
+    const ids = lo.map(articles, conditionsArticleIds);
     return lo.uniq(lo.flatten(ids));
   });
+
+  const articles = lo.flatten(lo.map(conditions, condition => {
+    return lo.map(condition.articles, a => ({
+      id: a.articleId,
+      articleIds: conditionsArticleIds(a),
+      discount: discountFull(a),
+    }));
+  }));
 
   return {
     id,
     name,
+    articles,
     articleIds: lo.uniq(lo.flatten(articleIds)),
   };
 
@@ -91,7 +108,7 @@ export async function importOld() {
     discount: null,
   })));
 
-  debug('importOld:merged', merged.length, 'of', data.length);
+  debug('importOld:merged', merged.length);
 
   await conn.disconnect();
   debug('disconnected');
