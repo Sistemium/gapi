@@ -65,7 +65,9 @@ function conditionToArticle(condition) {
   }));
 }
 
-export function importVariant({ name, conditions, id }) {
+export function importVariant({
+  name, conditions, id, restrictions,
+}) {
 
   const articleIds = conditions.map(({ articles }) => {
     const ids = lo.map(articles, conditionsArticleIds);
@@ -74,12 +76,18 @@ export function importVariant({ name, conditions, id }) {
 
   const articles = lo.flatten(lo.map(conditions, conditionToArticle));
 
-  return {
+  const res = {
     id,
     name,
     articles,
     articleIds: lo.uniq(lo.flatten(articleIds)),
   };
+
+  if (restrictions) {
+    res.restrictions = restrictions;
+  }
+
+  return res;
 
 }
 
