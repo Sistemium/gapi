@@ -7,6 +7,7 @@ import debounce from 'lodash/debounce';
 // import { processingSchema } from '../models/Processing';
 //
 import campaignsImport from './import/campaignsImport';
+import articleImport from './import/articleImport';
 
 const { debug, error } = log('watch');
 
@@ -23,19 +24,35 @@ async function main() {
 
   await mongoose.connect();
 
-  const Campaign = mongo.model('Campaign', { _id: String }, 'Campaign');
+  watch(mongo);
 
-  const debouncedProcessing = debounce(() => {
-    campaignsImport(Campaign).catch(error);
-  }, WATCH_DEBOUNCE);
+}
 
-  Campaign.watch()
-    .on('change', ({ operationType }) => {
-      debug('Campaign', operationType);
-      debouncedProcessing();
-    });
+function watch(mongo) {
 
-  debouncedProcessing();
+  watcher('Campaign', campaignsImport, true);
+  watcher('Article', articleImport, true);
+
+  function watcher(name, callback, immediate = false) {
+
+    const model = mongo.model(name, { _id: String }, name);
+
+    const debouncedProcessing = debounce(() => {
+      callback(model).catch(error);
+    }, WATCH_DEBOUNCE);
+
+
+    model.watch()
+      .on('change', ({ operationType }) => {
+        debug(name, operationType);
+        debouncedProcessing();
+      });
+
+    if (immediate) {
+      callback(model).catch(error);
+    }
+
+  }
 
 }
 
