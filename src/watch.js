@@ -8,6 +8,7 @@ import debounce from 'lodash/debounce';
 //
 import campaignsImport from './import/campaignsImport';
 import articleImport from './import/articleImport';
+import discountImport from './import/discountImport';
 
 const { debug, error } = log('watch');
 
@@ -30,8 +31,9 @@ async function main() {
 
 function watch(mongo) {
 
-  watcher('Campaign', campaignsImport, true);
-  watcher('Article', articleImport, true);
+  watcher('Campaign', campaignsImport, false);
+  watcher('Article', articleImport, false);
+  watcher('Discount', discountImport, true);
 
   function watcher(name, callback, immediate = false) {
 
@@ -46,7 +48,8 @@ function watch(mongo) {
       .on('change', ({ operationType }) => {
         debug(name, operationType);
         debouncedProcessing();
-      });
+      })
+      .on('error', err => error(err));
 
     if (immediate) {
       callback(model).catch(error);
