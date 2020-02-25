@@ -43,11 +43,12 @@ function watch(mongo) {
       callback(model).catch(error);
     }, WATCH_DEBOUNCE);
 
-
     model.watch()
       .on('change', ({ operationType }) => {
-        debug(name, operationType);
-        debouncedProcessing();
+        // debug(name, operationType);
+        if (operationType === 'insert' || operationType === 'update') {
+          debouncedProcessing();
+        }
       })
       .on('error', err => error(err));
 
