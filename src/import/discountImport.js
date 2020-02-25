@@ -9,7 +9,7 @@ import ContractPriceGroup from '../models/ContractPriceGroup';
 import PartnerArticle from '../models/PartnerArticle';
 import PartnerPriceGroup from '../models/PartnerPriceGroup';
 
-const { debug } = log('import:discount');
+const { debug, error } = log('import:discount');
 
 const upsertDiscounts = ({ discount }) => !!discount;
 
@@ -32,6 +32,7 @@ export default async function (model) {
     await main(model);
     busy = false;
   } catch (e) {
+    error(e);
     busy = false;
   }
 
@@ -55,7 +56,7 @@ async function main(model) {
 
   debug('start', date, lastImported, maxTimestamp);
 
-  if (lastImported.getTime() === maxTimestamp.getTime()) {
+  if (lastImported && lastImported.getTime() === maxTimestamp.getTime()) {
     debug('exiting');
     return;
   }
