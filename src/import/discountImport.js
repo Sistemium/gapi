@@ -1,7 +1,9 @@
+import lo from 'lodash';
 import log from 'sistemium-telegram/services/log';
 import { whilstAsync, eachSeriesAsync } from 'sistemium-telegram/services/async';
-// import fpFilter from 'lodash/fp/filter';
-import lo from 'lodash';
+
+import Importing from '../models/Importing';
+
 import ContractArticle from '../models/ContractArticle';
 import ContractPriceGroup from '../models/ContractPriceGroup';
 import PartnerArticle from '../models/PartnerArticle';
@@ -10,19 +12,64 @@ import PartnerPriceGroup from '../models/PartnerPriceGroup';
 const { debug } = log('import:discount');
 
 const upsertDiscounts = ({ discount }) => !!discount;
-const byContractMatch = $exists => ({ 'receivers.contractId': { $exists } });
 
 function latterPriority({ documentDate: newDate }, { documentDate: oldDate }) {
   return !oldDate || newDate > oldDate;
 }
 
+let busy = false;
+
 export default async function (model) {
+
+  if (busy) {
+    debug('busy');
+    return;
+  }
+
+  busy = true;
+
+  try {
+    await main(model);
+    busy = false;
+  } catch (e) {
+    busy = false;
+  }
+
+}
+
+async function main(model) {
+
+  const name = 'Discount';
+
+  const lastImport = await Importing.findOne({ name });
+  const [max] = await model.find({}).sort({ timestamp: -1 }).limit(1);
+  const { timestamp: maxTimestamp } = max.toObject();
+  const { timestamp: lastImported } = lastImport || {};
 
   const date = new Date();
   date.setUTCHours(0, 0, 0, 0);
 
+  if (!maxTimestamp) {
+    throw new Error('empty maxTimestamp');
+  }
+
+  debug('start', date, lastImported, maxTimestamp);
+
+  if (lastImported.getTime() === maxTimestamp.getTime()) {
+    debug('exiting');
+    return;
+  }
+
+  const byContractMatch = $exists => ({
+    'receivers.contractId': { $exists },
+    timestamp: lastImported ? { $gt: lastImported } : { $exists: true },
+    $or: [{ dateE: { $gte: date } }, { dateE: null }],
+    dateB: { $lte: date },
+    isDeleted: false,
+    isProcessed: true,
+  });
+
   await mergeModel(...[
-    date,
     model,
     ContractArticle,
     byContractMatch(true),
@@ -32,7 +79,6 @@ export default async function (model) {
   ]);
 
   await mergeModel(...[
-    date,
     model,
     ContractPriceGroup,
     byContractMatch(true),
@@ -42,7 +88,6 @@ export default async function (model) {
   ]);
 
   await mergeModel(...[
-    date,
     model,
     PartnerArticle,
     byContractMatch(false),
@@ -52,7 +97,6 @@ export default async function (model) {
   ]);
 
   await mergeModel(...[
-    date,
     model,
     PartnerPriceGroup,
     byContractMatch(false),
@@ -61,21 +105,23 @@ export default async function (model) {
     'priceGroupId',
   ]);
 
+  const $set = { timestamp: maxTimestamp };
+
+  await Importing.updateOne({ name }, { $set, $currentDate: { ts: true } }, { upsert: true });
+
+  debug('finish:all');
+
 }
 
-async function mergeModel(date, modelFrom, modelTo, match, receiverKey, targetField, targetKey) {
+async function mergeModel(modelFrom, modelTo, match, receiverKey, targetField, targetKey) {
 
-  debug('mergeModel', date);
+  debug('mergeModel', receiverKey, targetField);
 
   const $limit = 250;
 
   const $match = {
     [targetField]: { $exists: true },
     ...match,
-    $or: [{ dateE: { $gte: date } }, { dateE: null }],
-    dateB: { $lte: date },
-    isDeleted: false,
-    isProcessed: true,
   };
 
   const pipeline = $skip => [
@@ -147,6 +193,6 @@ async function mergeModel(date, modelFrom, modelTo, match, receiverKey, targetFi
 
   });
 
-  debug('mergeModel:finished', totalRaw);
+  debug('mergeModel:finished', receiverKey, targetField, totalRaw);
 
 }
