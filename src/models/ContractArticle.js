@@ -6,7 +6,7 @@ export default new ModelSchema({
     contractId: String,
     articleId: String,
     discount: Number,
-    discountTypeId: String,
+    discountCategoryId: String,
     documentId: String,
     documentDate: Date,
   },
