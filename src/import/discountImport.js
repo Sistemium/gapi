@@ -1,6 +1,11 @@
 import lo from 'lodash';
 import log from 'sistemium-telegram/services/log';
 import { whilstAsync, eachSeriesAsync } from 'sistemium-telegram/services/async';
+import exporter from '../lib/exporter';
+import * as caSQL from './sql/exportContractArticleSQL';
+import * as cpgSQL from './sql/exportContractPriceGroupSQL';
+import * as paSQL from './sql/exportPartnerArticleSQL';
+import * as ppgSQL from './sql/exportPartnerPriceGroupSQL';
 
 import Importing from '../models/Importing';
 
@@ -13,8 +18,9 @@ const { debug, error } = log('import:discount');
 
 const upsertDiscounts = ({ discount }) => !!discount;
 
-function latterPriority({ documentDate: newDate }, { documentDate: oldDate }) {
-  return !oldDate || newDate > oldDate;
+function latterPriority(newData, { documentId: oldId, documentDate: oldDate }) {
+  const { documentId: newId, documentDate: newDate } = newData;
+  return !oldDate || newDate > oldDate || newId === oldId;
 }
 
 let busy = false;
@@ -29,7 +35,11 @@ export default async function (model) {
   busy = true;
 
   try {
-    await main(model);
+    await importToMongo(model);
+    await exportToAnywhere('ContractArticle', ContractArticle, caPick, caSQL);
+    await exportToAnywhere('ContractPriceGroup', ContractPriceGroup, cpgPick, cpgSQL);
+    await exportToAnywhere('PartnerArticle', PartnerArticle, paPick, paSQL);
+    await exportToAnywhere('PartnerPriceGroup', PartnerPriceGroup, ppgPick, ppgSQL);
     busy = false;
   } catch (e) {
     error(e);
@@ -38,7 +48,94 @@ export default async function (model) {
 
 }
 
-async function main(model) {
+function paPick(item) {
+  const {
+    partnerId,
+    articleId,
+    discount,
+    discountCategoryId,
+  } = item;
+  return [partnerId, articleId, discount, discountCategoryId];
+}
+
+function ppgPick(item) {
+  const {
+    partnerId,
+    priceGroupId,
+    discount,
+    discountCategoryId,
+  } = item;
+  return [partnerId, priceGroupId, discount, discountCategoryId];
+}
+
+function caPick(item) {
+  const {
+    contractId,
+    articleId,
+    discount,
+    discountCategoryId,
+  } = item;
+  return [contractId, articleId, discount, discountCategoryId];
+}
+
+function cpgPick(item) {
+  const {
+    contractId,
+    priceGroupId,
+    discount,
+    discountCategoryId,
+  } = item;
+  return [contractId, priceGroupId, discount, discountCategoryId];
+}
+
+async function exportToAnywhere(name, model, picker, sql) {
+
+  const importFilter = { name };
+  const lastImport = await Importing.findOne(importFilter);
+  let { params: { offset: lastImported } } = lastImport || { params: {} };
+
+  debug('exportToAnywhere:start', name, lastImported);
+
+  await whilstAsync(() => lastImported !== null, async () => {
+    lastImported = await exportToAnywherePage(lastImported, model, picker, sql);
+    if (lastImported) {
+      debug('exportToAnywhere:lastImported', lastImported);
+      const $set = { 'params.offset': lastImported };
+      const $currentDate = { ts: true };
+      await Importing.updateOne(importFilter, { $set, $currentDate }, { upsert: true });
+    }
+  });
+
+  debug('exportToAnywhere:finish', name);
+
+}
+
+async function exportToAnywherePage(lastImported, model, picker, sql) {
+
+  const data = await model.aggregate([{
+    $match: { ts: lastImported ? { $gt: lastImported } : { $ne: null } }
+  }])
+    .sort({ ts: 1 })
+    .limit(10000);
+
+  const values = data.map(picker);
+
+  if (!data.length) {
+    return null;
+  }
+
+  await exporter({
+    ...sql,
+    values,
+  });
+
+  const { ts: nextTimeStamp } = lo.last(data);
+
+  return nextTimeStamp;
+
+}
+
+async function importToMongo(model) {
 
   const name = 'Discount';
 
@@ -118,7 +215,7 @@ async function mergeModel(modelFrom, modelTo, match, receiverKey, targetField, t
 
   debug('mergeModel', receiverKey, targetField);
 
-  const $limit = 250;
+  const $limit = 200;
 
   const $match = {
     [targetField]: { $exists: true },
@@ -138,6 +235,7 @@ async function mergeModel(modelFrom, modelTo, match, receiverKey, targetField, t
         discount: true,
         isDeleted: true,
         isProcessed: true,
+        discountCategoryId: true,
         documentDate: '$date',
         receivers: '$receivers',
         targetId: `$${targetField}.${targetKey}`,
@@ -173,9 +271,12 @@ async function mergeModel(modelFrom, modelTo, match, receiverKey, targetField, t
         discount,
         documentId,
         documentDate,
+        discountCategoryId: item.discountCategoryId,
       })), receiverKey);
 
     }));
+
+    debug(items[0]);
 
     await eachSeriesAsync(lo.chunk(items, $limit * 3), async chunk => {
       const merged = await modelTo.mergeIfNotMatched(chunk, upsertDiscounts, latterPriority);
