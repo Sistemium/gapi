@@ -113,7 +113,7 @@ async function exportToAnywhere(name, model, picker, sql) {
 async function exportToAnywherePage(lastImported, model, picker, sql) {
 
   const data = await model.aggregate([{
-    $match: { ts: lastImported ? { $gt: lastImported } : { $ne: null } }
+    $match: { ts: lastImported ? { $gt: lastImported } : { $ne: null } },
   }])
     .sort({ ts: 1 })
     .limit(10000);
