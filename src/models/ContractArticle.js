@@ -13,6 +13,7 @@ export default new ModelSchema({
   },
   indexes: [
     { contractId: 1, articleId: 1 },
+    { documentId: 1 },
   ],
   mergeBy: ['contractId', 'articleId'],
   tsType: 'timestamp',
