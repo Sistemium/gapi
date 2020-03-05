@@ -16,7 +16,12 @@ function main(name) {
   const collection = targetDb.getCollection(name);
 
   const cursor = collection.aggregate([
-    { $match: { discount: { $ne: 0 }, dateE: { $exists: false } } },
+    {
+      $match: {
+        discount: { $ne: 0 },
+        dateE: { $exists: false },
+      }
+    },
     {
       $group: {
         _id: '$documentId',
@@ -41,7 +46,11 @@ function main(name) {
       continue;
     }
 
-    collection.updateMany({ documentId }, { $set: { dateE: discount.date = null } });
+    const { dateE: dateE = null } = discount;
+
+    if (dateE) {
+      collection.updateMany({ documentId }, { $set: { dateE } });
+    }
 
   }
 
