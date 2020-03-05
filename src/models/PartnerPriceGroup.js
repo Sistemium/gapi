@@ -6,6 +6,7 @@ export default new ModelSchema({
     partnerId: String,
     priceGroupId: String,
     discount: Number,
+    dateE: Date,
     discountCategoryId: String,
     documentId: String,
     documentDate: Date,

@@ -235,6 +235,7 @@ async function mergeModel(modelFrom, modelTo, match, receiverKey, targetField, t
         discount: true,
         isDeleted: true,
         isProcessed: true,
+        dateE: true,
         discountCategoryId: true,
         documentDate: '$date',
         receivers: '$receivers',
@@ -259,6 +260,7 @@ async function mergeModel(modelFrom, modelTo, match, receiverKey, targetField, t
     const items = lo.flatten(lo.map(raw, item => {
 
       const { targetId, documentId, documentDate } = item;
+      const { discountCategoryId, dateE = null } = item;
       let discount = item.articleDiscount || item.discount;
 
       if (item.isDeleted || !item.isProcessed) {
@@ -269,9 +271,10 @@ async function mergeModel(modelFrom, modelTo, match, receiverKey, targetField, t
         [targetKey]: targetId,
         [receiverKey]: receiverId,
         discount,
+        dateE,
         documentId,
         documentDate,
-        discountCategoryId: item.discountCategoryId,
+        discountCategoryId,
       })), receiverKey);
 
     }));
