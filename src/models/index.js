@@ -6,4 +6,5 @@ export default [
   Article,
   ArticleGroup,
   Campaign,
+  WarehouseBoxConfirmed,
 ];
