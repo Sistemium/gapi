@@ -237,7 +237,7 @@ async function mergeModel(modelFrom, modelTo, match, receiverKey, targetField, t
         isProcessed: true,
         dateE: true,
         discountCategoryId: true,
-        documentDate: '$date',
+        documentDate: '$dateB',
         receivers: '$receivers',
         targetId: `$${targetField}.${targetKey}`,
         articleDiscount: `$${targetField}.discount`,
