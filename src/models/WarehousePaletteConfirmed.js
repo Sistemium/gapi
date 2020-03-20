@@ -1,12 +1,13 @@
 import ModelSchema from 'sistemium-mongo/lib/schema';
 
 export default new ModelSchema({
-  collection: 'WarehouseBoxConfirmed',
+  collection: 'WarehousePaletteConfirmed',
   schema: {
     barcode: String,
     deviceUUID: String,
     deviceCts: String,
-    warehouseBoxId: String,
+    warehousePaletteId: String,
+    warehouseBoxIds: [String],
     warehouseItemIds: [String],
   },
   indexes: [{ barcode: 1 }],
