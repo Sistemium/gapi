@@ -141,6 +141,12 @@ async function importToMongo(model) {
 
   const lastImport = await Importing.findOne({ name });
   const [max] = await model.find({}).sort({ timestamp: -1 }).limit(1);
+
+  if (!max) {
+    debug('importToMongo:empty');
+    return;
+  }
+
   const { timestamp: maxTimestamp } = max.toObject();
   const { timestamp: lastImported } = lastImport || {};
 
