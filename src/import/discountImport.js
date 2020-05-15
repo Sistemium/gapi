@@ -18,11 +18,6 @@ const { debug, error } = log('import:discount');
 
 const upsertDiscounts = ({ discount }) => !!discount;
 
-function latterPriority(newData, { documentId: oldId, documentDate: oldDate }) {
-  const { documentId: newId, documentDate: newDate } = newData;
-  return !oldDate || newDate > oldDate || newId === oldId;
-}
-
 let busy = false;
 
 export default async function (model) {
@@ -222,6 +217,7 @@ async function mergeModel(modelFrom, modelTo, match, receiverKey, targetField, t
   debug('mergeModel', receiverKey, targetField);
 
   const $limit = 200;
+  const today = new Date().setUTCHours(0, 0, 0, 0);
 
   const $match = {
     [targetField]: { $exists: true },
@@ -303,6 +299,25 @@ async function mergeModel(modelFrom, modelTo, match, receiverKey, targetField, t
     totalRaw += raw.length;
 
   });
+
+  function latterPriority(newData, oldData) {
+    const {
+      documentId: oldId,
+      documentDate: oldDate,
+      dateE: oldE = '',
+      // discount: oldDiscount,
+    } = oldData;
+    const {
+      documentId: newId,
+      documentDate: newDate,
+      dateE: newE = '',
+      // discount: newDiscount,
+    } = newData;
+    return !oldDate
+      || (newE >= today && oldE < today)
+      || (newDate > oldDate && newE >= today)
+      || newId === oldId;
+  }
 
   debug('mergeModel:finished', receiverKey, targetField, totalRaw);
 
