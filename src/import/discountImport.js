@@ -204,6 +204,8 @@ async function importToMongo(model) {
     'priceGroupId',
   ]);
 
+  await nullifyMissing();
+
   const $set = { timestamp: maxTimestamp };
 
   await Importing.updateOne({ name }, { $set, $currentDate: { ts: true } }, { upsert: true });
@@ -211,6 +213,12 @@ async function importToMongo(model) {
   debug('finish:all');
 
 }
+
+
+async function nullifyMissing() {
+  // const docs = await findAllDocs();
+}
+
 
 async function mergeModel(modelFrom, modelTo, match, receiverKey, targetField, targetKey) {
 
@@ -250,7 +258,13 @@ async function mergeModel(modelFrom, modelTo, match, receiverKey, targetField, t
   let skip = 0;
   let totalRaw = 0;
 
-  await whilstAsync(() => skip >= 0, async () => {
+  await whilstAsync(() => skip >= 0, importSkipPage);
+
+  /*
+  Functions
+   */
+
+  async function importSkipPage() {
 
     const raw = await modelFrom.aggregate(pipeline(skip));
 
@@ -298,7 +312,7 @@ async function mergeModel(modelFrom, modelTo, match, receiverKey, targetField, t
 
     totalRaw += raw.length;
 
-  });
+  }
 
   function latterPriority(newData, oldData) {
     const {
