@@ -31,9 +31,9 @@ async function main() {
 
 function watch(mongo) {
 
-  watcher('Campaign', campaignsImport, false);
+  watcher('Campaign', campaignsImport, true);
   watcher('Article', articleImport, false);
-  watcher('Discount', discountImport, true);
+  watcher('Discount', discountImport, false);
 
   function watcher(name, callback, immediate = false) {
 
