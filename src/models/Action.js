@@ -2,25 +2,26 @@ import ModelSchema from 'sistemium-mongo/lib/schema';
 import { Schema } from 'mongoose';
 
 const optionSchema = new Schema({
-  // id: String,
   name: String,
-  campaignId: String,
   commentText: String,
-  ranges: { type: [{ name: String }], default: undefined },
+  ranges: [{ name: String }],
   required: {
     pcs: Number,
     volume: Number,
+    volumeTo: Number,
     sku: Number,
     cost: Number,
+    costTo: Number,
+    isMultiple: {
+      type: Boolean,
+      default: false,
+    },
+    etc: String,
   },
   discountComp: Number,
   discountOwn: Number,
   price: Number,
-  dateB: String,
-  dateE: String,
-  territory: String,
-  oneTime: Boolean,
-  repeatable: Boolean,
+  cashBonus: Number,
 });
 
 optionSchema.add({
@@ -34,8 +35,19 @@ optionSchema.add({
   },
 });
 
+const mongoSchema = new Schema(optionSchema);
+mongoSchema.add({
+  campaignId: String,
+  dateB: String,
+  dateE: String,
+  territory: String,
+  oneTime: Boolean,
+  repeatable: Boolean,
+  needPhoto: Boolean,
+});
+
 export default new ModelSchema({
   collection: 'Action',
-  mongoSchema: optionSchema,
+  mongoSchema,
   tsType: 'timestamp',
 }).model();
