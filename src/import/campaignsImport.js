@@ -93,7 +93,19 @@ export function importVariant({
 
 
 const SELECT_CAMPAIGNS = `SELECT
-    uuidToStr(xid) as id, name, commentText, isActive, dateB, dateE,
+    uuidToStr(xid) as id,
+    groupCode,
+    isnull(
+      if groupCode in ('op','mvz') and name not regexp '^[.]*(ОП|МВЗ).*' then string(
+          case
+            when groupCode = 'op' then '.ОП'
+            when groupCode = 'mvz' then 'МВЗ'
+            else ''
+          end,
+          ' ', cmp. name
+      ) endif,
+    name) as name,
+    commentText, isActive, dateB, dateE,
     (select max(xid) from bs.ActivityPeriod ap
           where not (date(cmp.dateE) < dateB or date(cmp.dateB) > dateE)
     ) as [campaignGroupId]

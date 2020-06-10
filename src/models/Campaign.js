@@ -13,6 +13,7 @@ export default new ModelSchema({
     isActive: Boolean,
     source: String,
     restrictions: Object,
+    groupCode: String,
   },
   tsType: 'timestamp',
 }).model();
