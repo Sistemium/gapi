@@ -20,6 +20,7 @@ const optionSchema = new Schema({
   },
   discountComp: Number,
   discountOwn: Number,
+  discountCash: Number,
   price: Number,
   cashBonus: Number,
 });
