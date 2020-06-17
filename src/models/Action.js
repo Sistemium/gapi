@@ -1,5 +1,5 @@
 import ModelSchema from 'sistemium-mongo/lib/schema';
-import { Schema } from 'mongoose';
+import { Schema } from 'sistemium-mongo/lib/mongoose';
 
 const optionSchema = new Schema({
   name: String,

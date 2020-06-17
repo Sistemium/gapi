@@ -7,6 +7,7 @@
     "lint": "eslint src --fix",
     "build": "eslint src && rm -rf dist && cp -rv src dist && cp package.json dist",
     "test": "npm run lint",
+    "imp": "nodemon src/watch.js",
     "import": "nodemon --exec 'npm run lint && node -r esm' -- src/watch.js",
     "start": "nodemon --exec 'npm run lint && node -r esm' -- src"
   },
@@ -18,8 +19,7 @@
     "esm": "^3.2.25",
     "koa-router": "^7.4.0",
     "lodash": "^4.17.11",
-    "mongoose": "^5.9.15",
-    "sistemium-mongo": "^1.3.6",
+    "sistemium-mongo": "^1.4.0",
     "sistemium-sqlanywhere": "^1.2.3",
     "sistemium-telegram": "^1.2.10"
   },
