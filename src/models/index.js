@@ -13,10 +13,11 @@ import WarehousePaletteConfirmed from './WarehousePaletteConfirmed';
 import Configuration from './etc/Configuration';
 
 import Action from './Action';
-
+import ActionHistory from './ActionHistory';
 
 export default [
   Action,
+  ActionHistory,
   Article,
   ArticleGroup,
   Campaign,
