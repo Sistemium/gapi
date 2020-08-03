@@ -96,10 +96,12 @@ const SELECT_CAMPAIGNS = `SELECT
     uuidToStr(xid) as id,
     groupCode,
     isnull(
-      if groupCode in ('op','mvz') and name not regexp '^[.]*(ОП|МВЗ).*' then string(
+      if groupCode in ('op','mvz','cfo') and name not regexp '^[.]*(ОП|МВЗ|ЦФО).*'
+      then string(
           case
             when groupCode = 'op' then '.ОП'
             when groupCode = 'mvz' then 'МВЗ'
+            when groupCode = 'cfo' then 'ЦФО'
             else ''
           end,
           ' ', cmp. name
