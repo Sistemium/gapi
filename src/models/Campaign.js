@@ -14,6 +14,17 @@ export default new ModelSchema({
     source: String,
     restrictions: Object,
     groupCode: String,
+    processing: String,
+
+    needPhoto: Boolean,
+
+    oneTime: Boolean,
+    repeatable: Boolean,
+    territory: String,
+
+    parentCampaignId: String,
+
+    restrictedActions: Array,
   },
   tsType: 'timestamp',
 }).model();

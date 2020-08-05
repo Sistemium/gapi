@@ -44,6 +44,7 @@ function importCampaign(rawCampaign) {
     isActive: true,
     commentText: null,
     variants,
+    processing: null,
   };
 
 }
@@ -95,6 +96,7 @@ export function importVariant({
 const SELECT_CAMPAIGNS = `SELECT
     uuidToStr(xid) as id,
     groupCode,
+    processing,
     isnull(
       if groupCode in ('op','mvz','cfo') and name not regexp '^[.]*(ОП|МВЗ|ЦФО).*'
       then string(
