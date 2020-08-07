@@ -9,6 +9,7 @@ import Action from '../models/Action';
 import ActionHistory from '../models/ActionHistory';
 import { toDateString } from '../lib/dates';
 import { campaignGroups } from '../lib/campaigns';
+import { importOld } from '../import/campaignsImport';
 
 const { debug } = log('news:campaign');
 
@@ -21,6 +22,7 @@ export default async function (message) {
 
   await mongo.connect();
 
+  await importOld();
   const campaigns = await findCreated();
   const history = await findUpdated();
 
