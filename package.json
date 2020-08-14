@@ -14,7 +14,7 @@
   },
   "author": "Sistemium UAB",
   "license": "ISC",
-  "repository": "Sistemium/ae-api",
+  "repository": "Sistemium/gapi",
   "dependencies": {
     "aws-sdk": "^2.726.0",
     "axios": "^0.18.0",
