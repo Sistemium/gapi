@@ -3,11 +3,13 @@ import log from 'sistemium-telegram/services/log';
 import { eachSeriesAsync } from 'sistemium-telegram/services/async';
 import * as mongo from 'sistemium-mongo/lib/mongoose';
 import lo from 'lodash';
+import { v4 } from 'uuid';
 import http from '../lib/axios';
+import Publication from '../models/etc/Publication';
 import Campaign from '../models/Campaign';
 import Action from '../models/Action';
 import ActionHistory from '../models/ActionHistory';
-import { toDateString } from '../lib/dates';
+import { toDateString, humanDate } from '../lib/dates';
 import { campaignGroups } from '../lib/campaigns';
 import { importOld } from '../import/campaignsImport';
 
@@ -21,12 +23,16 @@ const TAB = '╰';
 export default async function (message) {
 
   await mongo.connect();
+  const dryRun = message === 'test';
 
-  await importOld();
+  if (!dryRun) {
+    await importOld();
+  }
+
   const campaigns = await findCreated();
   const history = await findUpdated();
 
-  await publishCreated(campaigns, history, message === 'test');
+  await publishCreated(campaigns, history, dryRun);
 
 }
 
@@ -104,58 +110,85 @@ async function publishCreated(allCampaigns, allHistory, dryRun = false) {
     return;
   }
 
+  const date = new Date();
+  const dateB = toDateString(date, 0);
+  const dateE = toDateString(date, 1);
+
   await eachSeriesAsync(filtered, async groupData => {
 
     const { campaigns, label, history } = groupData;
+    const chapters = newsChapters(campaigns, history);
+    const subject = `Обновление акций ${label} ${humanDate(date)}`;
 
     const newsMessage = {
-      body: campaignsNewsBody(campaigns, history),
-      subject: `Обновление акций ${label}`,
-      dateB: toDateString(new Date(), 0),
-      dateE: toDateString(new Date(), 1),
+      body: campaignsNewsBody(chapters),
+      subject,
+      dateB,
+      dateE,
       appVersion: '0.0.0',
     };
 
     // debug(newsMessage);
 
     if (dryRun) {
-      debug('DRY_RUN', newsMessage.subject, newsMessage.body);
+      debug('DRY_RUN:chapters', chapters);
+      debug('DRY_RUN:newsMessage', newsMessage.subject, newsMessage.body);
       return;
     }
 
     const created = await createNewsMessage(newsMessage);
     debug('created', created.subject, created.id);
 
-    await commitCampaigns(campaigns);
-    await commitHistory(history);
+    const publication = await savePublication(date, subject, chapters, groupData.code);
+    debug('publication', publication);
+
+    await commitCampaigns(campaigns, publication);
+    await commitHistory(history, publication);
 
   });
 
 }
 
-async function commitCampaigns(campaigns) {
+async function savePublication(date, subject, chapters, code) {
+  return Publication.create({
+    id: v4(),
+    type: 'campaignNews',
+    date,
+    subject,
+    chapters,
+    tags: [code],
+  });
+}
+
+async function commitCampaigns(campaigns, publication) {
 
   const $in = lo.flatten(lo.map(campaigns, ({ actions }) => lo.map(actions, 'id')));
+  const { id: publicationId } = publication;
 
-  debug('commitCampaigns', $in);
+  debug('commitCampaigns', publicationId, $in);
 
   if (!$in.length) {
     return;
   }
 
-  await Action.updateMany({ id: { $in } }, { $set: { isPublished: true } }, { strict: false });
+  const $set = { isPublished: true, publicationId };
+
+  await Action.updateMany({ id: { $in } }, { $set }, { strict: false });
 
 }
 
-async function commitHistory(history) {
+async function commitHistory(history, publication) {
 
   const $in = lo.map(history, 'id');
+  const { id: publicationId } = publication;
+
+  debug('commitHistory', publicationId, $in);
 
   if (!$in.length) {
     return;
   }
 
-  const $set = { isPublished: true };
+  const $set = { isPublished: true, publicationId };
 
   await ActionHistory.updateMany({ id: { $in } }, { $set }, { strict: false });
 
@@ -172,29 +205,37 @@ function historyNewsLine(history) {
 
 }
 
-function campaignsNewsBody(campaigns, history) {
+function campaignsNewsBody(chapters) {
+  return lo.map(chapters, ({ header, text }) => [
+    `*${header}*`,
+    '',
+    text,
+  ].join('\n')).join('\n\n');
+}
 
-  const body = [];
+function newsChapters(campaigns, history) {
+
+  const chapters = [];
 
   if (campaigns.length) {
     const lines = campaigns.map(campaignNewsLine);
-    body.push([
-      '*Добавлены новые акции:*',
-      '',
-      ...lo.orderBy(lines),
-    ].join('\n'));
+    chapters.push({
+      type: 'added',
+      header: 'Добавлены новые акции',
+      text: lo.orderBy(lines).join('\n'),
+    });
   }
 
   if (history.length) {
     const lines = history.map(historyNewsLine);
-    body.push([
-      '*Изменены условия акций:*',
-      '',
-      ...lo.orderBy(lines),
-    ].join('\n'));
+    chapters.push({
+      type: 'modified',
+      header: 'Изменены условия акций',
+      text: lo.orderBy(lines).join('\n'),
+    });
   }
 
-  return lo.filter(body).join('\n\n');
+  return chapters;
 
 }
 

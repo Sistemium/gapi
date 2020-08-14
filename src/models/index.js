@@ -11,6 +11,8 @@ import WarehouseBoxConfirmed from './WarehouseBoxConfirmed';
 import WarehousePaletteConfirmed from './WarehousePaletteConfirmed';
 
 import Configuration from './etc/Configuration';
+import UserSubscription from './etc/UserSubscription';
+import Publication from './etc/Publication';
 
 import Action from './Action';
 import ActionHistory from './ActionHistory';
@@ -24,4 +26,6 @@ export default [
   WarehouseBoxConfirmed,
   WarehousePaletteConfirmed,
   Configuration,
+  UserSubscription,
+  Publication,
 ];
