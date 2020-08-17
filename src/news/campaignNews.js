@@ -131,7 +131,7 @@ async function publishCreated(allCampaigns, allHistory, dryRun = false) {
     // debug(newsMessage);
 
     if (dryRun) {
-      debug('DRY_RUN:chapters', chapters);
+      debug('DRY_RUN:chapters', JSON.stringify(chapters));
       debug('DRY_RUN:newsMessage', newsMessage.subject, newsMessage.body);
       return;
     }
@@ -194,22 +194,15 @@ async function commitHistory(history, publication) {
 
 }
 
-function historyNewsLine(history) {
-
-  const { campaign, action, commentText } = history;
-
-  return [
-    BULLET,
-    `${lo.trim(campaign.name, '. ')} (${lo.trim(action.name)})\n${TAB} ${lo.trim(commentText)}`,
-  ].join(' ');
-
-}
-
 function campaignsNewsBody(chapters) {
-  return lo.map(chapters, ({ header, text }) => [
-    `*${header}*`,
+  return lo.map(chapters, section => [
+    `*${section.header}*`,
     '',
-    text,
+    ...section.chapters.map(({ name, text, list }) => lo.filter([
+      `${BULLET} ${name}`,
+      text && `${TAB} ${text}`,
+      list && list.map(item => `${TAB} ${item}`),
+    ]).join('\n')),
   ].join('\n')).join('\n\n');
 }
 
@@ -222,7 +215,7 @@ function newsChapters(campaigns, history) {
     chapters.push({
       type: 'added',
       header: 'Добавлены новые акции',
-      text: lo.orderBy(lines).join('\n'),
+      chapters: lo.orderBy(lines, 'name'),
     });
   }
 
@@ -231,7 +224,7 @@ function newsChapters(campaigns, history) {
     chapters.push({
       type: 'modified',
       header: 'Изменены условия акций',
-      text: lo.orderBy(lines).join('\n'),
+      chapters: lo.orderBy(lines, 'name'),
     });
   }
 
@@ -249,18 +242,30 @@ function actualDatesFilter(today = toDateString(new Date())) {
 
 function campaignNewsLine(campaign) {
 
-  const actions = lo.uniq(campaign.actions.map(actionNewsLine));
-
-  return [
-    `${BULLET} ${lo.trim(campaign.name, '. ')}`,
-    ...actions,
-  ].join('\n');
+  return {
+    name: mapName(campaign),
+    list: lo.uniq(campaign.actions.map(mapName)),
+  };
 
 }
 
-function actionNewsLine(action) {
-  return `${TAB} ${lo.trim(action.name)}`;
+
+function historyNewsLine(history) {
+
+  const { campaign, action, commentText } = history;
+
+  return {
+    name: `${mapName(campaign)} (${mapName(action)})`,
+    text: lo.trim(commentText),
+  };
+
 }
+
+
+function mapName({ name }) {
+  return lo.trim(name, '. ');
+}
+
 
 export async function createNewsMessage(props) {
   return http.post('NewsMessage', props);
