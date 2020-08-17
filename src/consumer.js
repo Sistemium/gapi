@@ -25,6 +25,14 @@ const app = Consumer.create({
 
 app.start();
 
+process.on('SIGINT', stop);
+
+function stop() {
+  error('stopping');
+  app.stop();
+  // error('stopped');
+}
+
 async function handleMessage(message) {
   debug('message:', message.Body);
   await campaignNews(message.Body);
