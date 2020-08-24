@@ -1,6 +1,6 @@
 import lo from 'lodash';
 import log from 'sistemium-telegram/services/log';
-import { whilstAsync, eachSeriesAsync } from 'sistemium-telegram/services/async';
+import { whilstAsync, eachSeriesAsync, mapSeriesAsync } from 'sistemium-telegram/services/async';
 import exporter from '../lib/exporter';
 import * as caSQL from './sql/exportContractArticleSQL';
 import * as cpgSQL from './sql/exportContractPriceGroupSQL';
@@ -15,6 +15,9 @@ import PartnerArticle from '../models/PartnerArticle';
 import PartnerPriceGroup from '../models/PartnerPriceGroup';
 
 const { debug, error } = log('import:discount');
+
+const CHUNK_SIZE = 200;
+const CHUNK_SIZE_SMALL = 50;
 
 const upsertDiscounts = ({ discount }) => !!discount;
 
@@ -145,7 +148,7 @@ async function importToMongo(model) {
   const { timestamp: maxTimestamp } = max.toObject();
   const { timestamp: lastImported } = lastImport || {};
 
-  const date = new Date();
+  const date = clientDate();
   date.setUTCHours(0, 0, 0, 0);
 
   if (!maxTimestamp) {
@@ -204,7 +207,7 @@ async function importToMongo(model) {
     'priceGroupId',
   ]);
 
-  await nullifyMissing();
+  await nullifyMissing(model, date);
 
   const $set = { timestamp: maxTimestamp };
 
@@ -215,8 +218,116 @@ async function importToMongo(model) {
 }
 
 
-async function nullifyMissing() {
-  // const docs = await findAllDocs();
+export async function nullifyMissing(rawModel, today) {
+
+  const config = [ContractPriceGroup, 'contractId', 'priceGroups', 'priceGroupId'];
+
+  const expired = await filterExpired(rawModel, today, ...config);
+
+  debug('nullifyMissing:ContractPriceGroup', expired.length);
+
+  await nullifyChunked(ContractPriceGroup, expired);
+
+  async function nullifyChunked(model, data) {
+    await eachSeriesAsync(lo.chunk(data, CHUNK_SIZE), async chunk => {
+
+      const opsChunks = chunk.map(({ documentId, expiredKeys }) => expiredKeys.map(keys => ({
+        updateOne: {
+          filter: { documentId, ...keys },
+          update: {
+            $set: { discount: 0 },
+            $currentDate: { ts: { $type: 'timestamp' } },
+          },
+        },
+      })));
+
+      const ops = lo.flatten(opsChunks);
+
+      debug('nullifyChunked:', ops.length, ops[0])
+
+      await model.bulkWrite(ops, { ordered: false });
+
+    });
+  }
+
+}
+
+async function filterExpired(rawModel, today, model, receiverKey, targetField, targetKey) {
+
+  const pipeline = actualDataPipeline(receiverKey, targetKey);
+  const actualData = await model.aggregate(pipeline);
+  const chunks = lo.chunk(actualData, CHUNK_SIZE);
+
+  const chunkedExpired = await mapSeriesAsync(chunks, async chunk => {
+
+    const $match = { _id: { $in: lo.map(chunk, 'documentId') } };
+    const discounts = await rawModel.aggregate([{ $match }]);
+
+    return matchExpiredDiscounts(chunk, discounts, today, receiverKey, targetField, targetKey);
+
+  });
+
+  return lo.flatten(chunkedExpired);
+
+}
+
+
+/**
+ *
+ * @param discounts
+ * @param data
+ * @param today
+ * @param receiverKey
+ * @param targetField
+ * @param targetKey
+ * @returns {Array<Object>}
+ */
+
+export function matchExpiredDiscounts(data, discounts, today, receiverKey, targetField, targetKey) {
+
+  const discountsById = new Map(discounts.map(d => [d._id, d]));
+
+  const result = data.map(({ documentId, keys }) => {
+
+    const discount = discountsById.get(documentId);
+
+    const { dateE, isDeleted = true } = discount || {};
+
+    if (isDeleted || (dateE && dateE < today)) {
+      return { documentId, expiredKeys: keys };
+    }
+
+    const expiredKeys = lo.filter(keys, key => {
+      const receiver = lo.find(discount.receivers, { [receiverKey]: key[receiverKey] });
+      const target = lo.find(discount[targetField], { [targetKey]: key[targetKey] });
+      return !receiver || !target;
+    });
+
+    return expiredKeys.length && { documentId, expiredKeys };
+
+  });
+
+  return lo.filter(result);
+
+}
+
+
+export function actualDataPipeline(receiverKey, targetKey) {
+  return [
+    { $match: { discount: { $ne: 0 } } },
+    {
+      $group: {
+        _id: '$documentId',
+        keys: {
+          $addToSet: {
+            [receiverKey]: `$${receiverKey}`,
+            [targetKey]: `$${targetKey}`,
+          },
+        },
+      },
+    },
+    { $project: { _id: false, documentId: '$_id', keys: true, } },
+  ];
 }
 
 
@@ -224,8 +335,9 @@ async function mergeModel(modelFrom, modelTo, match, receiverKey, targetField, t
 
   debug('mergeModel', receiverKey, targetField);
 
-  const $limit = 200;
+  const $limit = CHUNK_SIZE;
   const today = new Date().setUTCHours(0, 0, 0, 0);
+  const priority = latterPriority(today);
 
   const $match = {
     [targetField]: { $exists: true },
@@ -273,32 +385,12 @@ async function mergeModel(modelFrom, modelTo, match, receiverKey, targetField, t
     let mergedTotal = 0;
     // debug(JSON.stringify(raw[0]));
 
-    const items = lo.flatten(lo.map(raw, item => {
-
-      const { targetId, documentId, documentDate } = item;
-      const { discountCategoryId, dateE = null } = item;
-      let discount = item.articleDiscount || item.discount;
-
-      if (item.isDeleted || !item.isProcessed) {
-        discount = 0;
-      }
-
-      return lo.filter(lo.map(item.receivers, ({ [receiverKey]: receiverId }) => ({
-        [targetKey]: targetId,
-        [receiverKey]: receiverId,
-        discount,
-        dateE,
-        documentId,
-        documentDate,
-        discountCategoryId,
-      })), receiverKey);
-
-    }));
+    const items = lo.flatten(lo.map(raw, discountPipelineMap(receiverKey, targetKey)));
 
     debug(items[0]);
 
     await eachSeriesAsync(lo.chunk(items, $limit * 3), async chunk => {
-      const merged = await modelTo.mergeIfNotMatched(chunk, upsertDiscounts, latterPriority);
+      const merged = await modelTo.mergeIfNotMatched(chunk, upsertDiscounts, priority);
       mergedTotal += merged.length;
     });
 
@@ -314,25 +406,56 @@ async function mergeModel(modelFrom, modelTo, match, receiverKey, targetField, t
 
   }
 
-  function latterPriority(newData, oldData) {
-    const {
-      documentId: oldId,
-      documentDate: oldDate,
-      dateE: oldE = '',
-      // discount: oldDiscount,
-    } = oldData;
-    const {
-      documentId: newId,
-      documentDate: newDate,
-      dateE: newE = '',
-      // discount: newDiscount,
-    } = newData;
-    return !oldDate
-      || (newE >= today && oldE < today)
-      || (newDate > oldDate && newE >= today)
-      || newId === oldId;
-  }
-
   debug('mergeModel:finished', receiverKey, targetField, totalRaw);
 
+}
+
+export function discountPipelineMap(receiverKey, targetKey) {
+  return item => {
+
+    const { targetId, documentId, documentDate } = item;
+    const { discountCategoryId, dateE = null } = item;
+    let discount = item.articleDiscount || item.discount;
+
+    if (item.isDeleted || !item.isProcessed) {
+      discount = 0;
+    }
+
+    return lo.filter(lo.map(item.receivers, ({ [receiverKey]: receiverId }) => ({
+      [targetKey]: targetId,
+      [receiverKey]: receiverId,
+      discount,
+      dateE,
+      documentId,
+      documentDate,
+      discountCategoryId,
+    })), receiverKey);
+
+  };
+}
+
+export const latterPriority = today => (newData, oldData) => {
+  const {
+    documentId: oldId,
+    documentDate: oldDate,
+    dateE: oldE = '',
+    // discount: oldDiscount,
+  } = oldData;
+  const {
+    documentId: newId,
+    documentDate: newDate,
+    dateE: newE = '',
+    // discount: newDiscount,
+  } = newData;
+  return !oldDate
+    || (newE >= today && oldE < today)
+    || (newE < today && oldE >= today)
+    || newDate > oldDate
+    || newId === oldId;
+};
+
+
+export function clientDate(date = new Date()) {
+  date.setUTCHours(0, 0, 0, 0);
+  return date;
 }

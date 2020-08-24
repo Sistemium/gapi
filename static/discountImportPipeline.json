@@ -1,0 +1,29 @@
+{
+  "dateE": "2020-07-14T00:00:00.000Z",
+  "discount": 0,
+  "discountCategoryId": "e2d6721e-57f4-11e7-8163-005056850f57",
+  "isDeleted": false,
+  "isProcessed": true,
+  "documentId": "3566912a-471e-11ea-819a-005056850f57",
+  "documentDate": "2020-02-04T00:00:00.000Z"Z,
+  "receivers": [
+    {
+      "partnerId": "91f6deb4-f141-11de-a609-0026551eee5a",
+      "contractId": "924e9a43-d71f-11e6-8154-005056850f57"
+    },
+    {
+      "partnerId": "2084a5da-0fdd-11df-a77c-0026551eee5a",
+      "contractId": "924e9a47-d71f-11e6-8154-005056850f57"
+    },
+    {
+      "partnerId": "ca6cf051-1b5c-11e7-815c-005056850f57",
+      "contractId": "acc053a0-361a-11e7-815d-005056850f57"
+    },
+    {
+      "partnerId": "71480722-aacd-11db-97ac-001485cc2379",
+      "contractId": "fed290a8-5c50-11ea-810c-0050568532e0"
+    }
+  ],
+  "targetId": "60f22942-1002-11e0-9d54-00237deee66e",
+  "articleDiscount": 2
+}

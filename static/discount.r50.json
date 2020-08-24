@@ -1,0 +1,116 @@
+{
+  "_id" : "3566912a-471e-11ea-819a-005056850f57",
+  "commentary" : "",
+  "cts" : "2020-02-10T21:24:11.090Z",
+  "date" : "2020-02-04T10:17:22.000Z",
+  "dateB" : "2020-02-04T00:00:00.000Z",
+  "dateE" : "2020-07-14T00:00:00.000Z",
+  "discount" : 0,
+  "discountCategoryId" : "e2d6721e-57f4-11e7-8163-005056850f57",
+  "ndoc" : "00000000838",
+  "priceGroups" : [
+    {
+      "priceGroupId" : "60f22942-1002-11e0-9d54-00237deee66e",
+      "discount" : 2
+    },
+    {
+      "priceGroupId" : "ff6e89da-dc72-11e1-9b39-3c4a92df27e6",
+      "discount" : 2
+    },
+    {
+      "priceGroupId" : "90530422-1ae6-11df-a80d-0026551eee5a",
+      "discount" : 2
+    },
+    {
+      "priceGroupId" : "1dd37b68-e155-11e1-9b39-3c4a92df27e6",
+      "discount" : 2
+    },
+    {
+      "priceGroupId" : "60f22943-1002-11e0-9d54-00237deee66e",
+      "discount" : 2
+    },
+    {
+      "priceGroupId" : "703f5874-fcca-11e5-94cc-005056851d41",
+      "discount" : 2
+    },
+    {
+      "priceGroupId" : "61f27bfd-3652-11df-9bdb-0026551eee5a",
+      "discount" : 2
+    },
+    {
+      "priceGroupId" : "434e12fb-0ffa-11e0-9d54-00237deee66e",
+      "discount" : 2
+    },
+    {
+      "priceGroupId" : "eb68ec0f-63c4-11e3-8fe9-3c4a92df27e6",
+      "discount" : 2
+    },
+    {
+      "priceGroupId" : "8afefba8-1bb7-11df-a80d-0026551eee5a",
+      "discount" : 2
+    },
+    {
+      "priceGroupId" : "90530440-1ae6-11df-a80d-0026551eee5a",
+      "discount" : 2
+    },
+    {
+      "priceGroupId" : "9053041f-1ae6-11df-a80d-0026551eee5a",
+      "discount" : 2
+    },
+    {
+      "priceGroupId" : "90530427-1ae6-11df-a80d-0026551eee5a",
+      "discount" : 2
+    },
+    {
+      "priceGroupId" : "d0e90039-3d1e-11e2-836d-3c4a92df27e6",
+      "discount" : 2
+    },
+    {
+      "priceGroupId" : "434e12fe-0ffa-11e0-9d54-00237deee66e",
+      "discount" : 2
+    },
+    {
+      "priceGroupId" : "91a42e06-7b98-11e0-a22b-00237deee66e",
+      "discount" : 2
+    },
+    {
+      "priceGroupId" : "a476fc00-ee18-11de-a609-0026551eee5a",
+      "discount" : 2
+    },
+    {
+      "priceGroupId" : "9053041e-1ae6-11df-a80d-0026551eee5a",
+      "discount" : 2
+    },
+    {
+      "priceGroupId" : "703f5873-fcca-11e5-94cc-005056851d41",
+      "discount" : 2
+    },
+    {
+      "priceGroupId" : "90530421-1ae6-11df-a80d-0026551eee5a",
+      "discount" : 2
+    }
+  ],
+  "receivers" : [
+    {
+      "partnerId" : "91f6deb4-f141-11de-a609-0026551eee5a",
+      "contractId" : "924e9a43-d71f-11e6-8154-005056850f57"
+    },
+    {
+      "partnerId" : "2084a5da-0fdd-11df-a77c-0026551eee5a",
+      "contractId" : "924e9a47-d71f-11e6-8154-005056850f57"
+    },
+    {
+      "partnerId" : "ca6cf051-1b5c-11e7-815c-005056850f57",
+      "contractId" : "acc053a0-361a-11e7-815d-005056850f57"
+    },
+    {
+      "partnerId" : "71480722-aacd-11db-97ac-001485cc2379",
+      "contractId" : "fed290a8-5c50-11ea-810c-0050568532e0"
+    }
+  ],
+  "site" : 1,
+  "timestamp" : "2020-08-24T04:17:00.691Z",
+  "ts" : "2020-08-24T04:17:05.150Z",
+  "isDeleted" : false,
+  "isProcessed" : true
+}
