@@ -17,7 +17,6 @@ import PartnerPriceGroup from '../models/PartnerPriceGroup';
 const { debug, error } = log('import:discount');
 
 const CHUNK_SIZE = 200;
-const CHUNK_SIZE_SMALL = 50;
 
 const upsertDiscounts = ({ discount }) => !!discount;
 
@@ -207,7 +206,7 @@ async function importToMongo(model) {
     'priceGroupId',
   ]);
 
-  await nullifyMissing(model, date);
+  await nullifyAllMissing(model, date);
 
   const $set = { timestamp: maxTimestamp };
 
@@ -218,17 +217,30 @@ async function importToMongo(model) {
 }
 
 
-export async function nullifyMissing(rawModel, today) {
+export async function nullifyAllMissing(rawModel, today) {
 
-  const config = [ContractPriceGroup, 'contractId', 'priceGroups', 'priceGroupId'];
+  const configs = [
+    [ContractPriceGroup, 'contractId', 'priceGroups', 'priceGroupId'],
+    [PartnerPriceGroup, 'partnerId', 'priceGroups', 'priceGroupId'],
+    // [ContractArticle, 'contractId', 'articles', 'articleId'],
+    [PartnerArticle, 'partnerId', 'articles', 'articleId'],
+  ];
 
-  const expired = await filterExpired(rawModel, today, ...config);
+  await eachSeriesAsync(configs, async config => {
+    await nullifyMissing(rawModel, today, ...config);
+  });
 
-  debug('nullifyMissing:ContractPriceGroup', expired.length);
+}
 
-  await nullifyChunked(ContractPriceGroup, expired);
+export async function nullifyMissing(rawModel, today, model, receiverKey, targetField, targetKey) {
 
-  async function nullifyChunked(model, data) {
+  const expired = await filterExpired(rawModel, today, model, receiverKey, targetField, targetKey);
+
+  debug('nullifyMissing:', model.modelName, expired.length);
+
+  await nullifyChunked(expired);
+
+  async function nullifyChunked(data) {
     await eachSeriesAsync(lo.chunk(data, CHUNK_SIZE), async chunk => {
 
       const opsChunks = chunk.map(({ documentId, expiredKeys }) => expiredKeys.map(keys => ({
@@ -243,7 +255,7 @@ export async function nullifyMissing(rawModel, today) {
 
       const ops = lo.flatten(opsChunks);
 
-      debug('nullifyChunked:', ops.length, ops[0])
+      debug('nullifyChunked:', ops.length, ops[0]);
 
       await model.bulkWrite(ops, { ordered: false });
 
@@ -285,7 +297,7 @@ async function filterExpired(rawModel, today, model, receiverKey, targetField, t
 
 export function matchExpiredDiscounts(data, discounts, today, receiverKey, targetField, targetKey) {
 
-  const discountsById = new Map(discounts.map(d => [d._id, d]));
+  const discountsById = new Map(discounts.map(d => [lo.get(d, '_id'), d]));
 
   const result = data.map(({ documentId, keys }) => {
 
@@ -326,7 +338,7 @@ export function actualDataPipeline(receiverKey, targetKey) {
         },
       },
     },
-    { $project: { _id: false, documentId: '$_id', keys: true, } },
+    { $project: { _id: false, documentId: '$_id', keys: true } },
   ];
 }
 
@@ -434,26 +446,27 @@ export function discountPipelineMap(receiverKey, targetKey) {
   };
 }
 
-export const latterPriority = today => (newData, oldData) => {
-  const {
-    documentId: oldId,
-    documentDate: oldDate,
-    dateE: oldE = '',
-    // discount: oldDiscount,
-  } = oldData;
-  const {
-    documentId: newId,
-    documentDate: newDate,
-    dateE: newE = '',
-    // discount: newDiscount,
-  } = newData;
-  return !oldDate
-    || (newE >= today && oldE < today)
-    || (newE < today && oldE >= today)
-    || newDate > oldDate
-    || newId === oldId;
-};
-
+export function latterPriority(today) {
+  return (newData, oldData) => {
+    const {
+      documentId: oldId,
+      documentDate: oldDate,
+      dateE: oldE = '',
+      // discount: oldDiscount,
+    } = oldData;
+    const {
+      documentId: newId,
+      documentDate: newDate,
+      dateE: newE = '',
+      // discount: newDiscount,
+    } = newData;
+    return !oldDate
+      || (newE >= today && oldE < today)
+      || (newE < today && oldE >= today)
+      || newDate > oldDate
+      || newId === oldId;
+  };
+}
 
 export function clientDate(date = new Date()) {
   date.setUTCHours(0, 0, 0, 0);
