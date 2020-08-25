@@ -17,6 +17,7 @@ import PartnerPriceGroup from '../models/PartnerPriceGroup';
 const { debug, error } = log('import:discount');
 
 const CHUNK_SIZE = 200;
+const CHUNK_SIZE_LARGE = 100000;
 
 const upsertDiscounts = ({ discount }) => !!discount;
 
@@ -222,7 +223,7 @@ export async function nullifyAllMissing(rawModel, today) {
   const configs = [
     [ContractPriceGroup, 'contractId', 'priceGroups', 'priceGroupId'],
     [PartnerPriceGroup, 'partnerId', 'priceGroups', 'priceGroupId'],
-    // [ContractArticle, 'contractId', 'articles', 'articleId'],
+    [ContractArticle, 'contractId', 'articles', 'articleId'],
     [PartnerArticle, 'partnerId', 'articles', 'articleId'],
   ];
 
@@ -255,7 +256,7 @@ export async function nullifyMissing(rawModel, today, model, receiverKey, target
 
       const ops = lo.flatten(opsChunks);
 
-      debug('nullifyChunked:', ops.length, ops[0]);
+      debug('nullifyChunked:', model.modelName, ops.length, lo.get(ops[0], 'filter'));
 
       await model.bulkWrite(ops, { ordered: false });
 
@@ -266,20 +267,45 @@ export async function nullifyMissing(rawModel, today, model, receiverKey, target
 
 async function filterExpired(rawModel, today, model, receiverKey, targetField, targetKey) {
 
-  const pipeline = actualDataPipeline(receiverKey, targetKey);
-  const actualData = await model.aggregate(pipeline);
-  const chunks = lo.chunk(actualData, CHUNK_SIZE);
+  let $skip = 0;
+  let $continue = true;
+  let result = [];
+  const $limit = CHUNK_SIZE_LARGE;
 
-  const chunkedExpired = await mapSeriesAsync(chunks, async chunk => {
+  await whilstAsync(() => $continue, async () => {
 
-    const $match = { _id: { $in: lo.map(chunk, 'documentId') } };
-    const discounts = await rawModel.aggregate([{ $match }]);
+    const pipeline = actualDataPipeline(receiverKey, targetKey, $limit, $skip);
+    const actualData = await model.aggregate(pipeline);
+    const chunks = lo.chunk(actualData, CHUNK_SIZE);
 
-    return matchExpiredDiscounts(chunk, discounts, today, receiverKey, targetField, targetKey);
+    const chunked = await mapSeriesAsync(chunks, async chunk => {
+
+      const $match = { _id: { $in: lo.map(chunk, 'documentId') } };
+      const discounts = await rawModel.aggregate([{ $match }]);
+
+      return matchExpiredDiscounts(chunk, discounts, today, receiverKey, targetField, targetKey);
+
+    });
+
+    const res = lo.flatten(chunked);
+
+    debug('filterExpired:', model.modelName, $skip, actualData.length, res.length);
+
+    if (!actualData.length) {
+      $continue = false;
+    }
+
+    if (res.length) {
+      result.push(...res);
+    }
+
+    $skip += $limit;
 
   });
 
-  return lo.flatten(chunkedExpired);
+  debug('filterExpired:result', model.modelName, result.length);
+
+  return result;
 
 }
 
@@ -324,9 +350,12 @@ export function matchExpiredDiscounts(data, discounts, today, receiverKey, targe
 }
 
 
-export function actualDataPipeline(receiverKey, targetKey) {
-  return [
+export function actualDataPipeline(receiverKey, targetKey, $limit = 0, $skip = 0) {
+  return lo.filter([
+    { $sort: { _id: 1 } },
     { $match: { discount: { $ne: 0 } } },
+    $skip && { $skip },
+    $limit && { $limit },
     {
       $group: {
         _id: '$documentId',
@@ -339,7 +368,7 @@ export function actualDataPipeline(receiverKey, targetKey) {
       },
     },
     { $project: { _id: false, documentId: '$_id', keys: true } },
-  ];
+  ]);
 }
 
 
