@@ -490,10 +490,9 @@ export function latterPriority(today) {
       // discount: newDiscount,
     } = newData;
     return !oldDate
-      || (newE >= today && oldE < today)
-      || (newE < today && oldE >= today)
-      || newDate > oldDate
-      || newId === oldId;
+      || newId === oldId
+      || (newE >= today && !(oldE && oldE >= today))
+      || (newDate > oldDate && newE >= today);
   };
 }
 
