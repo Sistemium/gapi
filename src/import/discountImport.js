@@ -269,7 +269,7 @@ async function filterExpired(rawModel, today, model, receiverKey, targetField, t
 
   let $skip = 0;
   let $continue = true;
-  let result = [];
+  const result = [];
   const $limit = CHUNK_SIZE_LARGE;
 
   await whilstAsync(() => $continue, async () => {
