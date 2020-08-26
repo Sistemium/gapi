@@ -239,29 +239,27 @@ export async function nullifyMissing(rawModel, today, model, receiverKey, target
 
   debug('nullifyMissing:', model.modelName, expired.length);
 
-  await nullifyChunked(expired);
+  await eachSeriesAsync(lo.chunk(expired, CHUNK_SIZE), async chunk => {
 
-  async function nullifyChunked(data) {
-    await eachSeriesAsync(lo.chunk(data, CHUNK_SIZE), async chunk => {
-
-      const opsChunks = chunk.map(({ documentId, expiredKeys }) => expiredKeys.map(keys => ({
-        updateOne: {
-          filter: { documentId, ...keys },
-          update: {
-            $set: { discount: 0 },
-            $currentDate: { ts: { $type: 'timestamp' } },
-          },
+    const opsChunks = chunk.map(({ documentId, expiredKeys }) => expiredKeys.map(keys => ({
+      updateOne: {
+        filter: { documentId, ...keys },
+        update: {
+          $set: { discount: 0, dateE: null },
+          $currentDate: { ts: { $type: 'timestamp' } },
         },
-      })));
+      },
+    })));
 
-      const ops = lo.flatten(opsChunks);
+    const ops = lo.flatten(opsChunks);
 
-      debug('nullifyChunked:', model.modelName, ops.length, lo.get(ops[0], 'filter'));
+    debug('nullifyChunked:', model.modelName, ops.length, lo.get(ops[0], 'filter'));
 
+    if (ops.length) {
       await model.bulkWrite(ops, { ordered: false });
+    }
 
-    });
-  }
+  });
 
 }
 

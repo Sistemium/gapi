@@ -14,8 +14,8 @@ function main(name) {
   const collection = db.getCollection(name);
 
   const updated = collection.updateMany(
-    { discount: { $ne: 0 }, dateE: { $lt } },
-    { $set: { discount: 0 }, $currentDate: { ts: { $type: 'timestamp' }} }
+    { discount: 0, dateE: { $gte: $lt } },
+    { $set: { dateE: null } }
   );
 
   printjson(updated);
