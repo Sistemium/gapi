@@ -110,6 +110,11 @@ const SELECT_CAMPAIGNS = `SELECT
       ) endif,
     name) as name,
     commentText, isActive, dateB, dateE,
+    priorityId,
+    territory,
+    oneTime,
+    repeatable,
+    needPhoto,
     (select max(xid) from bs.ActivityPeriod ap
           where not (date(cmp.dateE) < dateB or date(cmp.dateB) > dateE)
     ) as [campaignGroupId]
@@ -130,6 +135,9 @@ export async function importOld() {
 
   const merged = await Campaign.mergeIfChanged(data.map(item => ({
     ...item,
+    oneTime: !!item.oneTime,
+    repeatable: !!item.repeatable,
+    needPhoto: !!item.needPhoto,
     source: 'old',
     discount: null,
   })));

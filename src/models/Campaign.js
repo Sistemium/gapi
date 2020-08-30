@@ -17,10 +17,11 @@ export default new ModelSchema({
     processing: String,
 
     needPhoto: Boolean,
-
     oneTime: Boolean,
     repeatable: Boolean,
     territory: String,
+
+    priorityId: String,
 
     parentCampaignId: String,
 
