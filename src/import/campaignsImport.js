@@ -135,6 +135,7 @@ export async function importOld() {
 
   const merged = await Campaign.mergeIfChanged(data.map(item => ({
     ...item,
+    isActive: item.isActive === 1 || item.processing === 'published',
     oneTime: !!item.oneTime,
     repeatable: !!item.repeatable,
     needPhoto: !!item.needPhoto,
