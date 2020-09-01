@@ -1,6 +1,7 @@
 import Article from './Article';
 import ArticleGroup from './ArticleGroup';
 import Campaign from './Campaign';
+import CampaignsPriority from './CampaignsPriority';
 
 import './PartnerArticle';
 import './ContractArticle';
@@ -23,6 +24,7 @@ export default [
   Article,
   ArticleGroup,
   Campaign,
+  CampaignsPriority,
   WarehouseBoxConfirmed,
   WarehousePaletteConfirmed,
   Configuration,
