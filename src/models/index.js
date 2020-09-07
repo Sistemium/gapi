@@ -11,6 +11,7 @@ import './ContractPriceGroup';
 import WarehouseBoxConfirmed from './WarehouseBoxConfirmed';
 import WarehousePaletteConfirmed from './WarehousePaletteConfirmed';
 
+import SalesTeam from './SalesTeam';
 import Configuration from './etc/Configuration';
 import UserSubscription from './etc/UserSubscription';
 import Publication from './etc/Publication';
@@ -30,4 +31,5 @@ export default [
   Configuration,
   UserSubscription,
   Publication,
+  SalesTeam,
 ];
