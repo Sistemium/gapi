@@ -53,17 +53,13 @@ async function shareActions(sourceMongo) {
 
   const data = sourceActions.map(importAction);
 
-  const merged = await Action.mergeIfNotMatched(data, () => true, updateActionConditions);
+  const merged = await Action.mergeIfNotMatched(data);
 
   debug('shareActions:merged', merged.length);
 
   const { ts: offset } = lo.last(sourceActions);
   await saveOffset(SHARE_ACTIONS, offset);
 
-}
-
-function updateActionConditions(n, o) {
-  return o.processing !== 'published';
 }
 
 function importAction(action) {

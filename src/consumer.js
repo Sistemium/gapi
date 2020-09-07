@@ -3,6 +3,7 @@ import { Consumer } from 'sqs-consumer';
 import { SQS } from 'aws-sdk';
 import log from 'sistemium-telegram/services/log';
 import campaignNews from './news/campaignNews';
+import campaignsSharing from './import/campaignsSharing';
 
 const { debug, error } = log('news');
 const { SQS_QUEUE_URL } = process.env;
@@ -33,7 +34,19 @@ function stop() {
   // error('stopped');
 }
 
-async function handleMessage(message) {
-  debug('message:', message.Body);
-  await campaignNews(message.Body);
+async function handleMessage({ Body: msgBody }) {
+
+  debug('message:', msgBody);
+
+  switch (msgBody) {
+    case 'campaignsSharing':
+      await campaignsSharing();
+      break;
+    case 'campaignNews':
+    case 'send':
+    case 'test':
+    default:
+      await campaignNews(msgBody);
+  }
+
 }
