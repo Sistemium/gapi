@@ -97,7 +97,8 @@ const SELECT_CAMPAIGNS = `SELECT
     uuidToStr(xid) as id,
     groupCode,
     processing,
-    isnull(
+    coalesce(
+      if priorityId is not null then string('Важное', ' ', cmp.name) endif,
       if groupCode in ('op','mvz','cfo') and name not regexp '^[.]*(ОП|МВЗ|ЦФО).*'
       then string(
           case
@@ -106,7 +107,7 @@ const SELECT_CAMPAIGNS = `SELECT
             when groupCode = 'cfo' then 'ЦФО'
             else ''
           end,
-          ' ', cmp. name
+          ' ', cmp.name
       ) endif,
     name) as name,
     commentText, isActive, dateB, dateE,
