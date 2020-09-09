@@ -96,7 +96,7 @@ async function findCreated() {
 
 async function publishCreated(allCampaigns, allHistory, dryRun = false) {
 
-  const grouped = lo.map(campaignGroups(), ({ value, label }) => ({
+  const grouped = lo.map(await campaignGroups(), ({ value, label }) => ({
     label,
     code: value,
     campaigns: lo.filter(allCampaigns, { groupCode: value }),
@@ -118,7 +118,7 @@ async function publishCreated(allCampaigns, allHistory, dryRun = false) {
 
     const { campaigns, label, history } = groupData;
     const chapters = newsChapters(campaigns, history);
-    const subject = `Обновление акций ${label} ${humanDate(date)}`;
+    const subject = lo.filter(['Обновление акций', label, humanDate(date)]).join(' ');
 
     const newsMessage = {
       body: campaignsNewsBody(chapters),
@@ -201,7 +201,7 @@ function campaignsNewsBody(chapters) {
     ...section.chapters.map(({ name, text, list }) => lo.filter([
       `${BULLET} ${name}`,
       text && `${TAB} ${text}`,
-      list && list.map(item => `${TAB} ${item}`),
+      ...(list || []).map(item => `${TAB} ${item}`),
     ]).join('\n')),
   ].join('\n')).join('\n\n');
 }
