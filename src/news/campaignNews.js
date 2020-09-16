@@ -56,6 +56,11 @@ async function findUpdated() {
     { $match },
     ...lookupAction,
     ...lookupCampaign,
+    {
+      $match: {
+        'campaign.processing': 'published',
+      },
+    },
   ];
 
   const history = await ActionHistory.aggregate(pipeline);
