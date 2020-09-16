@@ -57,6 +57,7 @@ mongoSchema.add({
   oneTime: Boolean,
   repeatable: Boolean,
   needPhoto: Boolean,
+  priorityId: String,
 });
 
 export default new ModelSchema({
