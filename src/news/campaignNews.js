@@ -1,6 +1,6 @@
 import { toManyFiltered, toOneLookup } from 'sistemium-mongo/lib/pipeline';
-import log from 'sistemium-telegram/services/log';
-import { eachSeriesAsync } from 'sistemium-telegram/services/async';
+import log from 'sistemium-debug';
+import eachSeriesAsync from 'async/eachSeries';
 import * as mongo from 'sistemium-mongo/lib/mongoose';
 import lo from 'lodash';
 import { v4 } from 'uuid';

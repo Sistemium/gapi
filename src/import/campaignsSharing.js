@@ -1,5 +1,5 @@
 import * as mongo from 'sistemium-mongo/lib/mongoose';
-import log from 'sistemium-telegram/services/log';
+import log from 'sistemium-debug';
 import { toOneLookup } from 'sistemium-mongo/lib/pipeline';
 import lo from 'lodash';
 import Action from '../models/Action';

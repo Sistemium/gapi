@@ -8,7 +8,6 @@
     "build": "eslint src && rm -rf dist && cp -rv src dist && cp package.json dist",
     "test": "npm run lint",
     "news": "nodemon --exec 'npm run lint && node -r esm' -- src/consumer.js",
-    "imp": "nodemon src/watch.js",
     "import": "nodemon --exec 'npm run lint && node -r esm' -- src/watch.js",
     "start": "nodemon --exec 'npm run lint && node -r esm' -- src"
   },
@@ -16,17 +15,18 @@
   "license": "ISC",
   "repository": "Sistemium/gapi",
   "dependencies": {
-    "aws-sdk": "^2.726.0",
-    "axios": "^0.18.0",
-    "dayjs": "^1.8.17",
+    "async": "^3.2.0",
+    "aws-sdk": "^2.771.0",
+    "axios": "^0.20.0",
+    "dayjs": "^1.9.3",
     "esm": "^3.2.25",
     "koa-router": "^7.4.0",
-    "lodash": "^4.17.11",
-    "uuid": "^8.3.0",
+    "lodash": "^4.17.20",
+    "sistemium-debug": "^1.0.0",
     "sistemium-mongo": "^1.5.0",
-    "sistemium-sqlanywhere": "^1.2.3",
-    "sistemium-telegram": "^1.2.10",
-    "sqs-consumer": "^5.4.0"
+    "sistemium-sqlanywhere": "^1.2.6",
+    "sqs-consumer": "^5.4.0",
+    "uuid": "^8.3.1"
   },
   "devDependencies": {
     "eslint": "^4.19.1",

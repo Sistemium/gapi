@@ -1,7 +1,6 @@
-import 'sistemium-telegram/config/aws';
 import { Consumer } from 'sqs-consumer';
 import { SQS } from 'aws-sdk';
-import log from 'sistemium-telegram/services/log';
+import log from 'sistemium-debug';
 import campaignNews from './news/campaignNews';
 import campaignsSharing from './import/campaignsSharing';
 
@@ -15,7 +14,7 @@ if (!SQS_QUEUE_URL) {
 const app = Consumer.create({
   queueUrl: SQS_QUEUE_URL,
   handleMessage,
-  sqs: new SQS(),
+  sqs: new SQS({ region: 'eu-west-1' }),
 });
 
 ['error', 'processing_error', 'timeout_error'].forEach(eventName => {

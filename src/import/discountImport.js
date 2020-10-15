@@ -1,6 +1,6 @@
 import lo from 'lodash';
-import log from 'sistemium-telegram/services/log';
-import { whilstAsync, eachSeriesAsync, mapSeriesAsync } from 'sistemium-telegram/services/async';
+import log from 'sistemium-debug';
+import { whilst as whilstAsync, eachSeries, mapSeries } from 'async';
 import exporter from '../lib/exporter';
 import * as caSQL from './sql/exportContractArticleSQL';
 import * as cpgSQL from './sql/exportContractPriceGroupSQL';
@@ -94,7 +94,7 @@ async function exportToAnywhere(name, model, picker, sql) {
 
   debug('exportToAnywhere:start', name, lastImported);
 
-  await whilstAsync(() => lastImported !== null, async () => {
+  await whilstAsync(async () => lastImported !== null, async () => {
     lastImported = await exportToAnywherePage(lastImported, model, picker, sql);
     if (lastImported) {
       debug('exportToAnywhere:lastImported', lastImported);
@@ -227,7 +227,7 @@ export async function nullifyAllMissing(rawModel, today) {
     [PartnerArticle, 'partnerId', 'articles', 'articleId'],
   ];
 
-  await eachSeriesAsync(configs, async config => {
+  await eachSeries(configs, async config => {
     await nullifyMissing(rawModel, today, ...config);
   });
 
@@ -239,7 +239,7 @@ export async function nullifyMissing(rawModel, today, model, receiverKey, target
 
   debug('nullifyMissing:', model.modelName, expired.length);
 
-  await eachSeriesAsync(lo.chunk(expired, CHUNK_SIZE), async chunk => {
+  await eachSeries(lo.chunk(expired, CHUNK_SIZE), async chunk => {
 
     const opsChunks = chunk.map(({ documentId, expiredKeys }) => expiredKeys.map(keys => ({
       updateOne: {
@@ -276,7 +276,7 @@ async function filterExpired(rawModel, today, model, receiverKey, targetField, t
     const actualData = await model.aggregate(pipeline);
     const chunks = lo.chunk(actualData, CHUNK_SIZE);
 
-    const chunked = await mapSeriesAsync(chunks, async chunk => {
+    const chunked = await mapSeries(chunks, async chunk => {
 
       const $match = { _id: { $in: lo.map(chunk, 'documentId') } };
       const discounts = await rawModel.aggregate([{ $match }]);
@@ -428,7 +428,7 @@ async function mergeModel(modelFrom, modelTo, match, receiverKey, targetField, t
 
     debug(items[0]);
 
-    await eachSeriesAsync(lo.chunk(items, $limit * 3), async chunk => {
+    await eachSeries(lo.chunk(items, $limit * 3), async chunk => {
       const merged = await modelTo.mergeIfNotMatched(chunk, upsertDiscounts, priority);
       mergedTotal += merged.length;
     });

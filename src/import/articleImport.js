@@ -1,5 +1,5 @@
 import lo from 'lodash';
-import log from 'sistemium-telegram/services/log';
+import log from 'sistemium-debug';
 
 // import Article from '../models/Article';
 import ArticleGroup from '../models/ArticleGroup';

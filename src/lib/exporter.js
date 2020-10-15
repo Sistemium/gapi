@@ -1,5 +1,5 @@
-import log from 'sistemium-telegram/services/log';
-import { eachSeriesAsync } from 'sistemium-telegram/services/async';
+import log from 'sistemium-debug';
+import eachSeriesAsync from 'async/eachSeries';
 
 import lo from 'lodash';
 import Anywhere from 'sistemium-sqlanywhere';

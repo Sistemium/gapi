@@ -1,4 +1,4 @@
-import log from 'sistemium-telegram/services/log';
+import log from 'sistemium-debug';
 // import fpOmit from 'lodash/fp/omit';
 import lo from 'lodash';
 import Anywhere from 'sistemium-sqlanywhere';
