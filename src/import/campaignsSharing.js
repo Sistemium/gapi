@@ -3,10 +3,12 @@ import log from 'sistemium-telegram/services/log';
 import { toOneLookup } from 'sistemium-mongo/lib/pipeline';
 import lo from 'lodash';
 import Action from '../models/Action';
+import Campaign from '../models/Campaign';
 import assert from '../lib/assert';
 import { lastImportedFilter, saveOffset } from '../models/Importing';
 
 const { debug, error } = log('sharing:campaigns');
+const PUBLISHED = 'published';
 
 export default async function () {
 
@@ -53,12 +55,20 @@ async function shareActions(sourceMongo) {
 
   const data = sourceActions.map(importAction);
 
-  const merged = await Action.mergeIfNotMatched(data);
+  const campaignIds = lo.uniq(lo.map(data, 'campaignId'));
 
+  const ownCampaigns = await Campaign.find({ id: { $in: campaignIds } });
+
+  const merged = await Action.mergeIfNotMatched(data, shouldUpsertAction, shouldUpsertAction);
   debug('shareActions:merged', merged.length);
 
   const { ts: offset } = lo.last(sourceActions);
   await saveOffset(SHARE_ACTIONS, offset);
+
+  function shouldUpsertAction(action) {
+    const campaign = lo.find(ownCampaigns, { id: action.campaignId });
+    return !campaign || campaign.processing !== PUBLISHED;
+  }
 
 }
 
