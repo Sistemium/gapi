@@ -48,6 +48,22 @@ optionSchema.add({
   },
 });
 
+const layout = {
+  pictures: [
+    {
+      _id: false,
+      id: String,
+      articlePictureId: String,
+      src: String,
+      thumbnailSrc: String,
+      label: String,
+      height: Number,
+    },
+  ],
+  align: String,
+  commentText: String,
+};
+
 const mongoSchema = new Schema(optionSchema);
 mongoSchema.add({
   campaignId: String,
@@ -58,6 +74,7 @@ mongoSchema.add({
   repeatable: Boolean,
   needPhoto: Boolean,
   priorityId: String,
+  layout,
 });
 
 export default new ModelSchema({
