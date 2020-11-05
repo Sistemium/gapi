@@ -270,7 +270,7 @@ async function filterExpired(rawModel, today, model, receiverKey, targetField, t
   const result = [];
   const $limit = CHUNK_SIZE_LARGE;
 
-  await whilstAsync(() => $continue, async () => {
+  await whilstAsync(async () => $continue, async () => {
 
     const pipeline = actualDataPipeline(receiverKey, targetKey, $limit, $skip);
     const actualData = await model.aggregate(pipeline);
@@ -409,7 +409,7 @@ async function mergeModel(modelFrom, modelTo, match, receiverKey, targetField, t
   let skip = 0;
   let totalRaw = 0;
 
-  await whilstAsync(() => skip >= 0, importSkipPage);
+  await whilstAsync(async () => skip >= 0, importSkipPage);
 
   /*
   Functions
