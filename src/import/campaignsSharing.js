@@ -7,6 +7,7 @@ import Campaign from '../models/Campaign';
 import assert from '../lib/assert';
 import { lastImportedFilter, saveOffset } from '../models/Importing';
 import { toDateString } from '../lib/dates';
+import { importOld } from './campaignsImport';
 
 const { debug, error } = log('sharing:campaigns');
 const PUBLISHED = 'published';
@@ -22,6 +23,7 @@ export default async function () {
   await mongo.connect(MONGO_URL);
 
   try {
+    await importOld();
     await shareActions(sourceMongo);
     await shareCampaigns();
     await shareCampaignPictures();
