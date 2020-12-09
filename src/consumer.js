@@ -3,6 +3,7 @@ import { SQS } from 'aws-sdk';
 import log from 'sistemium-debug';
 import campaignNews from './news/campaignNews';
 import campaignsSharing from './import/campaignsSharing';
+import exportArchive from './import/exportArchive';
 
 const { debug, error } = log('news');
 const { SQS_QUEUE_URL } = process.env;
@@ -40,6 +41,9 @@ async function handleMessage({ Body: msgBody }) {
   switch (msgBody) {
     case 'campaignsSharing':
       await campaignsSharing();
+      break;
+    case 'exportArchive':
+      await exportArchive();
       break;
     case 'campaignNews':
     case 'send':
