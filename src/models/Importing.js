@@ -22,5 +22,5 @@ export async function lastImportedFilter(name) {
 
 export async function saveOffset(name, offset) {
   assert(name, 'name param is required');
-  await Importing.updateOne({ name }, { $set: { 'params.offset': offset, ts: new Date() } });
+  await Importing.updateOne({ name }, { $set: { 'params.offset': offset, ts: new Date() } }, { upsert: true });
 }
