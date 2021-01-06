@@ -74,6 +74,7 @@ mongoSchema.add({
   repeatable: Boolean,
   needPhoto: Boolean,
   priorityId: String,
+  authId: String,
   layout,
 });
 
