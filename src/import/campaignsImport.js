@@ -4,7 +4,7 @@ import lo from 'lodash';
 import Anywhere from 'sistemium-sqlanywhere';
 
 import { toDateString } from '../lib/dates';
-import Campaign from '../models/Campaign';
+import Campaign from '../models/marketing/Campaign';
 
 const { debug } = log('import:campaigns');
 

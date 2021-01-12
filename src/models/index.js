@@ -1,7 +1,9 @@
-import Article from './Article';
-import ArticleGroup from './ArticleGroup';
-import Campaign from './Campaign';
-import CampaignsPriority from './CampaignsPriority';
+import Article from './marketing/Article';
+import ArticleGroup from './marketing/ArticleGroup';
+import Campaign from './marketing/Campaign';
+import CampaignsPriority from './marketing/CampaignsPriority';
+import Action from './marketing/Action';
+import ActionHistory from './marketing/ActionHistory';
 
 import './PartnerArticle';
 import './ContractArticle';
@@ -16,8 +18,6 @@ import Configuration from './etc/Configuration';
 import UserSubscription from './etc/UserSubscription';
 import Publication from './etc/Publication';
 
-import Action from './Action';
-import ActionHistory from './ActionHistory';
 
 export default [
   Action,

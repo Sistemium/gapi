@@ -2,7 +2,7 @@ import lo from 'lodash';
 import log from 'sistemium-debug';
 
 // import Article from '../models/Article';
-import ArticleGroup from '../models/ArticleGroup';
+import ArticleGroup from '../models/marketing/ArticleGroup';
 
 const { debug } = log('import:article');
 
