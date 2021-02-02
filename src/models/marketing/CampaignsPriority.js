@@ -6,6 +6,7 @@ export default new ModelSchema({
     name: String,
     ord: Number,
     cls: String,
+    isInternal: { type: Boolean, default: false },
   },
   tsType: 'timestamp',
 }).model();
