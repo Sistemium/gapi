@@ -5,6 +5,7 @@ import Anywhere from 'sistemium-sqlanywhere';
 
 import { toDateString } from '../lib/dates';
 import Campaign from '../models/marketing/Campaign';
+import CampaignsPriority from '../models/marketing/CampaignsPriority';
 
 const { debug } = log('import:campaigns');
 
@@ -98,7 +99,7 @@ const SELECT_CAMPAIGNS = `SELECT
     groupCode,
     processing,
     coalesce(
-      if priorityId is not null then string('Важное', ' ', cmp.name) endif,
+      -- if priorityId is not null then string('Важное', ' ', cmp.name) endif,
       if groupCode in ('op','mvz','cfo') and name not regexp '^[.]*(ОП|МВЗ|ЦФО).*'
       then string(
           case
@@ -131,11 +132,15 @@ export async function importOld() {
   debug('connected');
 
   const data = await conn.execImmediate(SELECT_CAMPAIGNS);
+  const priorities = await CampaignsPriority.find();
+
+  const priorityMap = lo.keyBy(priorities, 'id');
 
   debug('importOld:source', data.length);
 
   const merged = await Campaign.mergeIfChanged(data.map(item => ({
     ...item,
+    name: lo.filter([lo.get(priorityMap, `${item.priorityId}.name`), item.name]).join(' '),
     isActive: item.isActive === 1 || item.processing === 'published',
     oneTime: !!item.oneTime,
     repeatable: !!item.repeatable,
