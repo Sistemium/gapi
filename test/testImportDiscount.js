@@ -79,6 +79,27 @@ describe('Discount import', function () {
 
   });
 
+  it('should should find expired nulls of ContractPriceGroup', async function () {
+
+    this.timeout(15000);
+
+    const { MONGO_URL, MONGO_URL_1C } = process.env;
+
+    assert(MONGO_URL, 'MONGO_URL must be set');
+    assert(MONGO_URL_1C, 'MONGO_URL_1C must be set');
+
+    const sourceMongo = await mongo.connection(MONGO_URL_1C);
+    await mongo.connect(MONGO_URL);
+
+    const sourceDiscountModel = discountModel(sourceMongo);
+
+    const config = [ContractPriceGroup, 'contractId', 'priceGroups', 'priceGroupId'];
+    await di.removeExpiredNulls(sourceDiscountModel, di.clientDate(), ...config);
+
+    await mongo.disconnect();
+
+  });
+
   it('should should nullify all expired', async function () {
 
     this.timeout(45000);
