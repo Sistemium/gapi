@@ -86,7 +86,7 @@ export function importVariant({
   };
 
   if (restrictions) {
-    res.restrictions = restrictions;
+    res.restrictions = lo.pick(restrictions, ['outletId', 'partnerId', 'salesmanId']);
   }
 
   return res;
