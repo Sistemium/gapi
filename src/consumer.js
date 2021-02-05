@@ -31,6 +31,7 @@ process.on('SIGINT', stop);
 function stop() {
   error('stopping');
   app.stop();
+  process.exit();
   // error('stopped');
 }
 
@@ -48,8 +49,10 @@ async function handleMessage({ Body: msgBody }) {
     case 'campaignNews':
     case 'send':
     case 'test':
-    default:
       await campaignNews(msgBody);
+      break;
+    default:
+      error('unknown message type', msgBody);
   }
 
 }
