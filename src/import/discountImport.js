@@ -239,13 +239,20 @@ export async function nullifyMissing(rawModel, today, model, receiverKey, target
 
   debug('nullifyMissing:', model.modelName, expired.length);
 
+  await deleteDiscounts(model, expired);
+
+}
+
+
+async function deleteDiscounts(model, expired) {
+
   await eachSeries(lo.chunk(expired, CHUNK_SIZE), async chunk => {
 
     const opsChunks = chunk.map(({ documentId, expiredKeys }) => expiredKeys.map(keys => ({
       updateOne: {
         filter: { documentId, ...keys },
         update: {
-          $set: { discount: 0, dateE: null },
+          $set: { discount: 0, dateE: null, documentDate: null },
           $currentDate: { ts: { $type: 'timestamp' } },
         },
       },
@@ -263,7 +270,20 @@ export async function nullifyMissing(rawModel, today, model, receiverKey, target
 
 }
 
-async function filterExpired(rawModel, today, model, receiverKey, targetField, targetKey) {
+
+export async function removeExpiredNulls(
+  rawModel, today, model, receiverKey, targetField, targetKey,
+) {
+  const expired = await filterExpired(
+    rawModel, today, model, receiverKey, targetField, targetKey, false,
+  );
+  debug('removeExpiredNulls:', model.modelName, expired.length);
+  await deleteDiscounts(model, expired);
+}
+
+async function filterExpired(
+  rawModel, today, model, receiverKey, targetField, targetKey, discount = true,
+) {
 
   let $skip = 0;
   let $continue = true;
@@ -272,7 +292,7 @@ async function filterExpired(rawModel, today, model, receiverKey, targetField, t
 
   await whilstAsync(async () => $continue, async () => {
 
-    const pipeline = actualDataPipeline(receiverKey, targetKey, $limit, $skip);
+    const pipeline = actualDataPipeline(receiverKey, targetKey, $limit, $skip, discount);
     const actualData = await model.aggregate(pipeline);
     const chunks = lo.chunk(actualData, CHUNK_SIZE);
 
@@ -348,10 +368,13 @@ export function matchExpiredDiscounts(data, discounts, today, receiverKey, targe
 }
 
 
-export function actualDataPipeline(receiverKey, targetKey, $limit = 0, $skip = 0) {
+export function actualDataPipeline(receiverKey, targetKey, $limit = 0, $skip = 0, discount = true) {
+
+  const $match = discount ? { discount: { $ne: 0 } } : { discount: 0, documentDate: { $ne: null } };
+
   return lo.filter([
     { $sort: { _id: 1 } },
-    { $match: { discount: { $ne: 0 } } },
+    { $match },
     $skip && { $skip },
     $limit && { $limit },
     {
@@ -367,6 +390,7 @@ export function actualDataPipeline(receiverKey, targetKey, $limit = 0, $skip = 0
     },
     { $project: { _id: false, documentId: '$_id', keys: true } },
   ]);
+
 }
 
 
@@ -409,7 +433,11 @@ async function mergeModel(modelFrom, modelTo, match, receiverKey, targetField, t
   let skip = 0;
   let totalRaw = 0;
 
+  await removeExpiredNulls(modelFrom, today, modelTo, receiverKey, targetField, targetKey);
+
   await whilstAsync(async () => skip >= 0, importSkipPage);
+
+  debug('mergeModel:finished', receiverKey, targetField, totalRaw);
 
   /*
   Functions
@@ -444,8 +472,6 @@ async function mergeModel(modelFrom, modelTo, match, receiverKey, targetField, t
     totalRaw += raw.length;
 
   }
-
-  debug('mergeModel:finished', receiverKey, targetField, totalRaw);
 
 }
 
