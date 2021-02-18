@@ -4,6 +4,8 @@ import Campaign from './marketing/Campaign';
 import CampaignsPriority from './marketing/CampaignsPriority';
 import Action from './marketing/Action';
 import ActionHistory from './marketing/ActionHistory';
+import PerfectShop from './marketing/PerfectShop';
+import Assortment from './marketing/Assortment';
 
 import './PartnerArticle';
 import './ContractArticle';
@@ -32,4 +34,6 @@ export default [
   UserSubscription,
   Publication,
   SalesTeam,
+  Assortment,
+  PerfectShop,
 ];
