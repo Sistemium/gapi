@@ -8,10 +8,17 @@ import Campaign from '../models/marketing/Campaign';
 import CampaignsPriority from '../models/marketing/CampaignsPriority';
 
 const { debug } = log('import:campaigns');
+const { DISABLE_1C_ACTIONS } = process.env;
 
 // const omitId = fpOmit('_id');
 
 export default async function (model) {
+
+  await importOld();
+
+  if (DISABLE_1C_ACTIONS) {
+    return;
+  }
 
   const raw = await model.find({
     variants: { $not: { $size: 0 } },
@@ -25,8 +32,6 @@ export default async function (model) {
   const merged = await Campaign.mergeIfChanged(data);
 
   debug('merged', merged.length);
-
-  await importOld();
 
 }
 
