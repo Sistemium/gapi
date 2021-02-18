@@ -52,7 +52,7 @@ async function main() {
 
   const ps = psFromCampaign(campaigns, mergedAssortments);
 
-  debug(JSON.stringify(ps, null, 2));
+  debug(ps);
 
   await mergePS(ps);
 
@@ -154,20 +154,12 @@ function psFromCampaign(campaigns, assortment) {
     dateE: toDateString(dateE),
     dateB: toDateString(dateB),
     blocks,
-    levels: levelsFromCampaigns(campaigns, blocks),
+    levels: levelsFromCampaigns(campaigns, blocks, assortment),
   }
 
 }
 
-const LEVEL_REQ_MAP = new Map([
-  ['country', 'countryCnt'],
-  ['brand', 'brandCnt'],
-  ['skuCount', 'skuCnt'],
-  ['qty', 'pieceCnt'],
-  ['volume', 'litreCnt'],
-]);
-
-function levelsFromCampaigns(campaigns, blocks) {
+function levelsFromCampaigns(campaigns, blocks, assortment) {
 
   return LEVELS.map(({ id, name, prize }) => {
 
@@ -177,7 +169,7 @@ function levelsFromCampaigns(campaigns, blocks) {
       name,
       prize,
       blockRequirements: levelBlockRequirementsFromCampaign(campaign, blocks),
-      requirements: [],
+      requirements: levelRequirementsFromCampaign(campaign, assortment),
     };
 
   });
@@ -189,6 +181,42 @@ function levelBlockRequirementsFromCampaign(campaign, blocks) {
     name,
     shipmentCost: lo.find(conditionsFromCampaign(campaign), { name: code }).sum,
   }))
+}
+
+const LEVEL_REQ_MAP = new Map([
+  ['country', 'countryCnt'],
+  ['brand', 'brandCnt'],
+  ['skuCount', 'skuCnt'],
+  ['qty', 'pieceCnt'],
+  ['volume', 'litreCnt'],
+]);
+
+
+function levelRequirementsFromCampaign(campaign, assortment) {
+  return lo.filter(assortment.map(({ code, id }) => {
+
+    const res = {
+      assortmentId: id,
+      facingCnt: null,
+    };
+
+    const condition = lo.find(conditionsFromCampaign(campaign), { name: code });
+
+    if (!condition) {
+      return null;
+    }
+
+    LEVEL_REQ_MAP.forEach((prop, prop1C) => {
+      const val = condition[prop1C];
+      if (val) {
+        res[prop] = val;
+      }
+    });
+
+    return res;
+
+  }));
+
 }
 
 //

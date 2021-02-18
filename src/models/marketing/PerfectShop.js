@@ -1,6 +1,7 @@
 import ModelSchema from 'sistemium-mongo/lib/schema';
 
 const BLOCK = {
+  _id: false,
   ord: Number,
   name: String, // Vodka
   commentText: String,
