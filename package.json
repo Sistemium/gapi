@@ -24,7 +24,7 @@
     "lodash": "^4.17.20",
     "sistemium-auth": "^1.0.0",
     "sistemium-debug": "^1.0.0",
-    "sistemium-mongo": "^1.8.0",
+    "sistemium-mongo": "^1.9.0",
     "sistemium-sqlanywhere": "^1.2.6",
     "sqs-consumer": "^5.4.0",
     "uuid": "^8.3.1"
