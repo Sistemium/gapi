@@ -8,13 +8,16 @@ const BLOCK = {
 };
 
 const LEVEL = {
+  _id: false,
   name: String, // Bronze
   prize: Number,
   blockRequirements: [{
+    _id: false,
     name: String,
     shipmentCost: Number,
   }],
   requirements: [{
+    _id: false,
     assortmentId: String,
     countryCnt: Number,
     brandCnt: Number,

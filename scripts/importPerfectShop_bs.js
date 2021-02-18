@@ -16,6 +16,12 @@ assertVar('NAME_PREFIX');
 
 const { GOLD_ID, BRONZE_ID, SILVER_ID } = process.env;
 
+const LEVELS = [
+  { name: 'BRONZE', id: BRONZE_ID, prize: 500 },
+  { name: 'SILVER', id: SILVER_ID, prize: 1000 },
+  { name: 'GOLD', id: GOLD_ID, prize: 1500 },
+];
+
 assertVar('GOLD_ID');
 
 main()
@@ -30,13 +36,13 @@ async function main() {
   const mongo1C = await mongo.connection(MONGO_URL_1C)
   const Campaign1C = mongo1C.model('Campaign', { _id: String }, 'Campaign');
 
-  const $match = { _id: { $in: [GOLD_ID] } };
+  const $match = { _id: { $in: [GOLD_ID, BRONZE_ID, SILVER_ID] } };
 
   const campaigns = await Campaign1C.aggregate([{ $match }]);
 
   debug('campaigns', campaigns.length);
 
-  const blockCampaign = lo.find(campaigns, { id: GOLD_ID });
+  const blockCampaign = lo.find(campaigns, { _id: GOLD_ID });
 
   const newAssortments = assortmentFromCampaign(blockCampaign);
 
@@ -44,7 +50,7 @@ async function main() {
 
   const mergedAssortments = await updateAssortments(newAssortments);
 
-  const ps = psFromCampaign(blockCampaign, mergedAssortments);
+  const ps = psFromCampaign(campaigns, mergedAssortments);
 
   debug(JSON.stringify(ps, null, 2));
 
@@ -56,8 +62,13 @@ async function main() {
 
 }
 
-function assortmentFromCampaign({ variants: [{ conditions }] }) {
+function conditionsFromCampaign({ variants: [{ conditions }] }) {
+  return conditions;
+}
 
+function assortmentFromCampaign(campaign) {
+
+  const conditions = conditionsFromCampaign(campaign);
   const assortmentConditions = lo.filter(conditions, ({ sum, name }) => !sum || name.match(/тихие вина/));
 
   return lo.map(assortmentConditions, ({ name, articles }) => ({
@@ -68,8 +79,9 @@ function assortmentFromCampaign({ variants: [{ conditions }] }) {
 
 }
 
-function blocksFromCampaign({ variants: [{ conditions }] }, mergedAssortments) {
+function blocksFromCampaign(campaign, mergedAssortments) {
 
+  const conditions = conditionsFromCampaign(campaign);
   const allCodes = lo.map(mergedAssortments, 'code');
   const assortmentsMap = lo.mapValues(lo.keyBy(mergedAssortments, 'code'), ({ id }) => id);
 
@@ -79,6 +91,7 @@ function blocksFromCampaign({ variants: [{ conditions }] }, mergedAssortments) {
     const assortmentCodes = lo.filter(allCodes, code => lo.startsWith(code, ordString));
     return {
       name: blockName(name),
+      code: name,
       ord: parseInt(ordString, 0),
       assortmentIds: lo.map(assortmentCodes, code => assortmentsMap[code]),
     };
@@ -130,16 +143,52 @@ async function mergePS(perfectShop) {
 
 }
 
-function psFromCampaign(campaign, assortment) {
+function psFromCampaign(campaigns, assortment) {
 
-  const { dateB, dateE } = campaign;
+  const blockCampaign = lo.find(campaigns, { _id: GOLD_ID });
+
+  const { dateB, dateE } = blockCampaign;
+  const blocks = blocksFromCampaign(blockCampaign, assortment);
 
   return {
     dateE: toDateString(dateE),
     dateB: toDateString(dateB),
-    blocks: blocksFromCampaign(campaign, assortment),
+    blocks,
+    levels: levelsFromCampaigns(campaigns, blocks),
   }
 
+}
+
+const LEVEL_REQ_MAP = new Map([
+  ['country', 'countryCnt'],
+  ['brand', 'brandCnt'],
+  ['skuCount', 'skuCnt'],
+  ['qty', 'pieceCnt'],
+  ['volume', 'litreCnt'],
+]);
+
+function levelsFromCampaigns(campaigns, blocks) {
+
+  return LEVELS.map(({ id, name, prize }) => {
+
+    const campaign = lo.find(campaigns, { _id: id });
+
+    return {
+      name,
+      prize,
+      blockRequirements: levelBlockRequirementsFromCampaign(campaign, blocks),
+      requirements: [],
+    };
+
+  });
+
+}
+
+function levelBlockRequirementsFromCampaign(campaign, blocks) {
+  return blocks.map(({ code, name }) => ({
+    name,
+    shipmentCost: lo.find(conditionsFromCampaign(campaign), { name: code }).sum,
+  }))
 }
 
 //
