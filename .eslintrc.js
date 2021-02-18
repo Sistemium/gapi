@@ -41,7 +41,7 @@ module.exports = {
         'session', // for context sessions
         'ctx', // for koa routes
         // 'state', // for vuex state
-        // 'acc', // for reduce accumulators
+        'acc', // for reduce accumulators
         // 'e' // for e.returnvalue
       ]
     }],
