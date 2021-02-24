@@ -32,7 +32,9 @@ async function main() {
 function watch(mongo) {
 
   watcher('Campaign', campaignsImport, true);
-  watcher('Article', articleImport, false);
+  if (!process.env.DISABLE_ARTICLE_IMPORT) {
+    watcher('Article', articleImport, false);
+  }
   watcher('Discount', discountImport, false);
 
   function watcher(name, callback, immediate = false) {
