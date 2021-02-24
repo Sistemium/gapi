@@ -12,7 +12,7 @@ const { MONGO_URL_1C, MONGO_URL, NAME_PREFIX } = process.env;
 
 assert(MONGO_URL_1C, 'MONGO_URL_1C must be set');
 assert(MONGO_URL, 'MONGO_URL must be set');
-assertVar('NAME_PREFIX');
+//assertVar('NAME_PREFIX');
 
 const { GOLD_ID, BRONZE_ID, SILVER_ID } = process.env;
 
@@ -72,11 +72,22 @@ function assortmentFromCampaign(campaign) {
   const assortmentConditions = lo.filter(conditions, ({ sum, name }) => !sum || name.match(/тихие вина/));
 
   return lo.map(assortmentConditions, ({ name, articles }) => ({
-    name: `${NAME_PREFIX} ${lo.replace(name, /^[^а-я]*/i, '')}`,
+    name: `${parentBlockName({ name }, campaign)} / ${lo.replace(name, /^[^а-я]*/i, '')}`,
     code: name,
     articleIds: lo.map(articles, 'articleId'),
   }));
 
+}
+
+function parentBlockName(condition, campaign) {
+  const conditions = conditionsFromCampaign(campaign);
+  const blockConditions = lo.filter(conditions, ({ sum }) => sum);
+  const ordString = condition.name.match(/^\d+/);
+  const res = lo.find(blockConditions, ({ name }) => lo.startsWith(name, ordString));
+  if (!res) {
+    return null;
+  }
+  return blockName(res.name);
 }
 
 function blocksFromCampaign(campaign, mergedAssortments) {
@@ -218,21 +229,3 @@ function levelRequirementsFromCampaign(campaign, assortment) {
   }));
 
 }
-
-//
-// function blockNames(assortments) {
-//   const blocks = lo.filter(assortments, ({ articleIds }) => {
-//     return !lo.find(assortments, ({ articleIds: otherIds }) => {
-//       return lo.intersection(articleIds, otherIds).length && otherIds.length > articleIds.length;
-//     });
-//   });
-//   return lo.map(blocks, ({ name, articleIds, id }) => {
-//     const innerAssortments = lo.filter(assortments, ({ articleIds: otherIds }) => {
-//       return lo.intersection(articleIds, otherIds).length && otherIds.length < articleIds.length;
-//     });
-//     return {
-//       name,
-//       assortmentIds: innerAssortments.length ? lo.map(innerAssortments, 'id') : [id],
-//     };
-//   });
-// }
