@@ -105,10 +105,11 @@ const SELECT_CAMPAIGNS = `SELECT
     processing,
     coalesce(
       -- if priorityId is not null then string('Важное', ' ', cmp.name) endif,
-      if groupCode in ('op','mvz','cfo') and name not regexp '^[.]*(ОП|МВЗ|ЦФО).*'
+      if groupCode in ('op','mvz','cfo','ot') and name not regexp '^[.]*(ОП|МВЗ|ЦФО).*'
       then string(
           case
             when groupCode = 'op' then '.ОП'
+            when groupCode = 'ot' then 'ON-T'
             when groupCode = 'mvz' then 'МВЗ'
             when groupCode = 'cfo' then 'ЦФО'
             else ''
