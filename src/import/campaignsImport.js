@@ -1,5 +1,4 @@
 import log from 'sistemium-debug';
-// import fpOmit from 'lodash/fp/omit';
 import lo from 'lodash';
 import Anywhere from 'sistemium-sqlanywhere';
 
@@ -8,30 +7,51 @@ import Campaign from '../models/marketing/Campaign';
 import CampaignsPriority from '../models/marketing/CampaignsPriority';
 
 const { debug } = log('import:campaigns');
-const { DISABLE_1C_ACTIONS } = process.env;
-
-// const omitId = fpOmit('_id');
 
 export default async function (model) {
 
   await importOld();
 
-  if (DISABLE_1C_ACTIONS) {
+  const filter = {
+    variants: { $not: { $size: 0 } },
+    'variants.conditions.articles': { $not: { $size: 0 } },
+  };
+
+  const { CAMPAIGNS_PARTNER_IDS } = process.env;
+
+  if (!CAMPAIGNS_PARTNER_IDS) {
+    debug('empty CAMPAIGNS_PARTNER_IDS');
     return;
   }
 
-  const raw = await model.find({
-    variants: { $not: { $size: 0 } },
-    'variants.conditions.articles': { $not: { $size: 0 } },
-  });
+  const partnerIds = CAMPAIGNS_PARTNER_IDS !== '*' && CAMPAIGNS_PARTNER_IDS.split(',');
+
+  if (partnerIds) {
+    filter['variants.restrictions.partnerGroupIds'] = { $in: partnerIds };
+  }
+
+  const raw = await model.find(filter);
 
   const data = raw.map(importCampaign);
 
   debug('source', raw.length);
 
-  const merged = await Campaign.mergeIfChanged(data);
+  const withDiscount = lo.filter(data, hasAnyDiscount);
+  const withoutDiscount = lo.filter(data, d => !hasAnyDiscount(d));
 
-  debug('merged', merged.length);
+  const merged = await Campaign.mergeIfChanged(withDiscount);
+
+  debug('merged', merged.length, 'withoutDiscount', withoutDiscount.length);
+
+}
+
+function hasAnyDiscount({ discount, variants }) {
+
+  if (discount) {
+    return true;
+  }
+
+  return lo.find(variants, ({ articles }) => lo.find(articles, 'discount'));
 
 }
 
@@ -72,9 +92,14 @@ function conditionToArticle(condition) {
   }));
 }
 
-export function importVariant({
-  name, conditions, id, restrictions,
-}) {
+export function importVariant(v) {
+
+  const {
+    name,
+    conditions,
+    id,
+    restrictions,
+  } = v;
 
   const articleIds = conditions.map(({ articles }) => {
     const ids = lo.map(articles, conditionsArticleIds);
