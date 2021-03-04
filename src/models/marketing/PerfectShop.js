@@ -48,7 +48,7 @@ export default new ModelSchema({
 }).model();
 
 
-const aggregators = {
+const AGGREGATORS = {
   countryCnt: stats => lo.uniq(lo.map(stats, 'countryId')).length,
   brandCnt: stats => lo.uniq(lo.map(stats, 'brandId')).length,
   skuCnt: stats => lo.uniq(lo.map(stats, 'skuId')).length,
@@ -116,15 +116,18 @@ export function blockResults(level, outletStats, articleIdBlockMap) {
 export function checkAssortmentRequirements(assortment, levelRequirements, outletStats) {
 
   const { articleIds = [], id: assortmentId, name: assortmentName } = assortment;
-
   const matching = lo.filter(outletStats, ({ articleId }) => articleIds.includes(articleId));
 
-  const res = lo.map(aggregators, (aggregator, rule) => {
+  const res = lo.map(AGGREGATORS, (aggregator, rule) => {
+
     const goal = levelRequirements[rule];
+
     if (!goal) {
       return null;
     }
+
     const value = aggregator(matching);
+
     return {
       assortmentId,
       assortmentName,
@@ -133,6 +136,7 @@ export function checkAssortmentRequirements(assortment, levelRequirements, outle
       goal,
       result: value >= goal,
     };
+
   });
 
   return lo.filter(res);
