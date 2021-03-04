@@ -14,10 +14,7 @@ import OutletStats from '../models/marketing/OutletStats';
 
 const { debug, error } = log('news:ps');
 
-updateStats()
-  .catch(error);
-
-export async function updateStats() {
+export default async function () {
 
   const anywhere = new Anywhere();
 
@@ -125,6 +122,8 @@ async function doUpdateStats(anywhere) {
   await mergeOutletSalesman(anywhere, dateB, dateE);
 
   await OutletStats.merge(results);
+
+  debug('finish');
 
 }
 

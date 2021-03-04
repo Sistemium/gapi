@@ -1,18 +1,21 @@
 import * as mongo from 'sistemium-mongo/lib/mongoose';
 import log from 'sistemium-debug';
 import lo from 'lodash';
-import assert, { assertVar } from '../src/lib/assert';
-import Assortment from '../src/models/marketing/Assortment';
-import PerfectShop from '../src/models/marketing/PerfectShop';
-import { toDateString } from '../src/lib/dates';
+import assert, { assertVar } from '../lib/assert';
+import Assortment from '../models/marketing/Assortment';
+import PerfectShop from '../models/marketing/PerfectShop';
+import { toDateString } from '../lib/dates';
 
 const { debug, error } = log('import');
 
 const { MONGO_URL_1C, MONGO_URL, NAME_PREFIX } = process.env;
 
-assert(MONGO_URL_1C, 'MONGO_URL_1C must be set');
-assert(MONGO_URL, 'MONGO_URL must be set');
-//assertVar('NAME_PREFIX');
+const { DATE_B, DATE_E } = process.env;
+
+assertVar('MONGO_URL_1C');
+assertVar('MONGO_URL');
+assertVar('DATE_B');
+assertVar('DATE_E');
 
 const { GOLD_ID, BRONZE_ID, SILVER_ID } = process.env;
 
@@ -24,16 +27,13 @@ const LEVELS = [
 
 assertVar('GOLD_ID');
 
-main()
-  .catch(error);
-
-async function main() {
+export default async function () {
 
   debug('start');
 
   await mongo.connect(MONGO_URL);
 
-  const mongo1C = await mongo.connection(MONGO_URL_1C)
+  const mongo1C = await mongo.connection(MONGO_URL_1C);
   const Campaign1C = mongo1C.model('Campaign', { _id: String }, 'Campaign');
 
   const $match = { _id: { $in: [GOLD_ID, BRONZE_ID, SILVER_ID] } };
@@ -48,7 +48,7 @@ async function main() {
 
   debug('newAssortments', lo.map(newAssortments, 'name'));
 
-  const mergedAssortments = await updateAssortments(newAssortments);
+  const mergedAssortments = await updateAssortments(newAssortments, blockCampaign._id);
 
   const ps = psFromCampaign(campaigns, mergedAssortments);
 
@@ -120,15 +120,17 @@ function blockName(conditionName) {
 }
 
 
-async function updateAssortments(newAssortments) {
+async function updateAssortments(newAssortments, source) {
 
+  const $match = { source };
   const $project = { id: true, name: true };
-  const oldAssortments = await Assortment.aggregate([{ $project }]);
+  const oldAssortments = await Assortment.aggregate([{ $match }, { $project }]);
   const assortmentsByName = lo.mapValues(lo.keyBy(oldAssortments, 'name'), ({ id }) => id);
   const updateAssortments = lo.map(newAssortments, assortment => ({
     ...assortment,
+    source,
     id: assortmentsByName[assortment.name],
-  }))
+  }));
 
   const mergedAssortmentIds = await Assortment.merge(updateAssortments);
   debug('mergedAssortments', mergedAssortmentIds.length);
@@ -158,15 +160,17 @@ function psFromCampaign(campaigns, assortment) {
 
   const blockCampaign = lo.find(campaigns, { _id: GOLD_ID });
 
-  const { dateB, dateE } = blockCampaign;
+  const dateB = DATE_B;
+  const dateE = DATE_E;
+
   const blocks = blocksFromCampaign(blockCampaign, assortment);
 
   return {
-    dateE: toDateString(dateE),
-    dateB: toDateString(dateB),
+    dateE,
+    dateB,
     blocks,
     levels: levelsFromCampaigns(campaigns, blocks, assortment),
-  }
+  };
 
 }
 
@@ -179,6 +183,7 @@ function levelsFromCampaigns(campaigns, blocks, assortment) {
     return {
       name,
       prize,
+      campaignId: id,
       blockRequirements: levelBlockRequirementsFromCampaign(campaign, blocks),
       requirements: levelRequirementsFromCampaign(campaign, assortment),
     };
@@ -191,7 +196,7 @@ function levelBlockRequirementsFromCampaign(campaign, blocks) {
   return blocks.map(({ code, name }) => ({
     name,
     shipmentCost: lo.find(conditionsFromCampaign(campaign), { name: code }).sum,
-  }))
+  }));
 }
 
 const LEVEL_REQ_MAP = new Map([

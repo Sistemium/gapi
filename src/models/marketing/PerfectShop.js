@@ -33,6 +33,7 @@ const LEVEL = {
   prize: Number,
   blockRequirements: BLOCK_REQUIREMENTS(),
   requirements: LEVEL_REQUIREMENTS(),
+  campaignId: String,
 };
 
 export default new ModelSchema({

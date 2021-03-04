@@ -1,4 +1,4 @@
-import ModelSchema from '../../../../sistemium-mongo/lib/schema';
+import ModelSchema from 'sistemium-mongo/lib/schema';
 
 export default new ModelSchema({
   collection: 'OutletStats',
