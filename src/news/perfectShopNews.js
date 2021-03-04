@@ -32,16 +32,30 @@ export default async function (date) {
 async function doUpdateStats(anywhere, date) {
 
   const today = date || toDateString(new Date());
-
   debug('doUpdateStats', today);
 
   const ps = await PerfectShop.findOne({ dateB: { $lte: today }, dateE: { $gte: today } });
-  assert(ps, `Not found PS record for ${today}`);
+  assert(ps, `Not found PS record for ${date}`);
+
+  const { dateB, dateE } = ps;
+  debug('ps', dateB, dateE);
+
+  const results = await makePSResults(anywhere, ps);
+  debug('results', results.length);
+
+  await mergeOutletSalesman(anywhere, dateB, dateE);
+
+  await OutletStats.merge(results);
+
+  debug('finish');
+
+}
+
+
+async function makePSResults(anywhere, ps) {
 
   const { blocks, dateB, dateE } = ps;
   const { levels } = ps;
-
-  debug('ps', ps.id, ps.dateB, ps.dateE);
 
   await anywhere.execImmediate(sql.DECLARE_BLOCK);
 
@@ -76,7 +90,7 @@ async function doUpdateStats(anywhere, date) {
     PS.articleIdBlockMapWithAssortmentMap(PS.levelBlocks(level, blocks), assortmentMap),
   ]));
 
-  const results = lo.map(byOutletId, (outletStats, outletId) => {
+  return lo.map(byOutletId, (outletStats, outletId) => {
 
     const statsByLevel = lo.map(levels, level => ({
       levelName: level.name,
@@ -106,6 +120,7 @@ async function doUpdateStats(anywhere, date) {
         assortments: a,
         blocks: b,
       });
+
     }
 
     return {
@@ -117,19 +132,12 @@ async function doUpdateStats(anywhere, date) {
 
   });
 
-  debug('results', results.length);
-
-  await mergeOutletSalesman(anywhere, dateB, dateE);
-
-  await OutletStats.merge(results);
-
-  debug('finish');
-
 }
 
-
 async function mergeOutletSalesman(anywhere, dateB, dateE) {
+
   const rawData = await anywhere.execImmediate(sql.SELECT_OUTLET_SALESMAN, [dateB, dateE]);
+
   const data = rawData.map(item => ({
     outletId: item.outletId,
     dateB,
