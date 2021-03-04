@@ -41,9 +41,7 @@ async function doUpdateStats(anywhere, date) {
   const { blocks, dateB, dateE } = ps;
   const { levels } = ps;
 
-  // const assortmentIds = lo.flatten(lo.map(blocks, 'assortmentIds'));
-  // const assortments = await Assortment.find({ id: { $in: assortmentIds } })
-  // const articleIds = lo.map(assortments, 'articleIds');
+  debug('ps', ps.id, ps.dateB, ps.dateE);
 
   await anywhere.execImmediate(sql.DECLARE_BLOCK);
 
