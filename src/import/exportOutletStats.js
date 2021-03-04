@@ -12,10 +12,10 @@ const { debug, error } = log('export:outletStats');
 
 // main().catch(error);
 
-export default async function () {
+export default async function (msgBody) {
 
   await mongoose.connect();
-  const monthId = dates.currentMonth();
+  const monthId = msgBody || dates.currentMonth();
 
   try {
     await doExport(monthId);

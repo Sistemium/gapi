@@ -4,6 +4,8 @@ import log from 'sistemium-debug';
 import campaignNews from './news/campaignNews';
 import campaignsSharing from './import/campaignsSharing';
 import exportArchive from './import/exportArchive';
+import exportOutletStats from './import/exportOutletStats';
+import perfectShopNews from './news/perfectShopNews';
 
 const { debug, error } = log('news');
 const { SQS_QUEUE_URL } = process.env;
@@ -39,7 +41,15 @@ async function handleMessage({ Body: msgBody }) {
 
   debug('message:', msgBody);
 
-  switch (msgBody) {
+  const { name, param } = msgParam(msgBody);
+
+  switch (name) {
+    case 'exportOutletStats':
+      await exportOutletStats(param);
+      break;
+    case 'perfectShopNews':
+      await perfectShopNews(param);
+      break;
     case 'campaignsSharing':
       await campaignsSharing();
       break;
@@ -49,10 +59,15 @@ async function handleMessage({ Body: msgBody }) {
     case 'campaignNews':
     case 'send':
     case 'test':
-      await campaignNews(msgBody);
+      await campaignNews(name);
       break;
     default:
       error('unknown message type', msgBody);
   }
 
+}
+
+function msgParam(msgBody) {
+  const [, name, param] = msgBody.match(/(^[^/]+)\/?(.*)$/);
+  return { name, param };
 }

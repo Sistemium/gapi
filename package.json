@@ -7,7 +7,7 @@
     "lint": "eslint src --fix",
     "build": "eslint src && rm -rf dist && cp -rv src dist && cp package.json dist",
     "test": "npm run lint",
-    "news": "nodemon --exec 'npm run lint && node -r esm' -- src/consumer.js",
+    "consumer": "nodemon --exec 'npm run lint && node -r esm' -- src/consumer.js",
     "import": "nodemon --exec 'npm run lint && node -r esm' -- src/watch.js",
     "start": "nodemon --exec 'npm run lint && node -r esm' -- src"
   },

@@ -1,14 +1,14 @@
 import * as mongo from 'sistemium-mongo/lib/mongoose';
 import log from 'sistemium-debug';
 import lo from 'lodash';
-import assert, { assertVar } from '../lib/assert';
+import { assertVar } from '../lib/assert';
 import Assortment from '../models/marketing/Assortment';
 import PerfectShop from '../models/marketing/PerfectShop';
-import { toDateString } from '../lib/dates';
+// import { toDateString } from '../lib/dates';
 
-const { debug, error } = log('import');
+const { debug } = log('import');
 
-const { MONGO_URL_1C, MONGO_URL, NAME_PREFIX } = process.env;
+const { MONGO_URL_1C, MONGO_URL } = process.env;
 
 const { DATE_B, DATE_E } = process.env;
 
@@ -48,7 +48,7 @@ export default async function () {
 
   debug('newAssortments', lo.map(newAssortments, 'name'));
 
-  const mergedAssortments = await updateAssortments(newAssortments, blockCampaign._id);
+  const mergedAssortments = await updateAssortments(newAssortments, GOLD_ID);
 
   const ps = psFromCampaign(campaigns, mergedAssortments);
 
@@ -126,13 +126,13 @@ async function updateAssortments(newAssortments, source) {
   const $project = { id: true, name: true };
   const oldAssortments = await Assortment.aggregate([{ $match }, { $project }]);
   const assortmentsByName = lo.mapValues(lo.keyBy(oldAssortments, 'name'), ({ id }) => id);
-  const updateAssortments = lo.map(newAssortments, assortment => ({
+  const updated = lo.map(newAssortments, assortment => ({
     ...assortment,
     source,
     id: assortmentsByName[assortment.name],
   }));
 
-  const mergedAssortmentIds = await Assortment.merge(updateAssortments);
+  const mergedAssortmentIds = await Assortment.merge(updated);
   debug('mergedAssortments', mergedAssortmentIds.length);
 
   return Assortment.find({ id: { $in: mergedAssortmentIds } });

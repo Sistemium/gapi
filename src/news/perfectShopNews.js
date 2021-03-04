@@ -14,14 +14,14 @@ import OutletStats from '../models/marketing/OutletStats';
 
 const { debug, error } = log('news:ps');
 
-export default async function () {
+export default async function (date) {
 
   const anywhere = new Anywhere();
 
   await anywhere.connect();
   await mongo.connect();
 
-  await doUpdateStats(anywhere).catch(error);
+  await doUpdateStats(anywhere, date).catch(error);
 
   await mongo.disconnect();
   await anywhere.disconnect();
@@ -29,9 +29,11 @@ export default async function () {
 }
 
 
-async function doUpdateStats(anywhere) {
+async function doUpdateStats(anywhere, date) {
 
-  const today = toDateString(new Date());
+  const today = date || toDateString(new Date());
+
+  debug('doUpdateStats', today);
 
   const ps = await PerfectShop.findOne({ dateB: { $lte: today }, dateE: { $gte: today } });
   assert(ps, `Not found PS record for ${today}`);
