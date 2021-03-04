@@ -49,11 +49,20 @@ export default new ModelSchema({
 
 
 const AGGREGATORS = {
-  countryCnt: stats => lo.uniq(lo.map(stats, 'countryId')).length,
-  brandCnt: stats => lo.uniq(lo.map(stats, 'brandId')).length,
-  skuCnt: stats => lo.uniq(lo.map(stats, 'skuId')).length,
-  pieceCnt: stats => lo.sumBy(stats, 'pieceCnt'),
-  litreCnt: stats => lo.sumBy(stats, 'litreCnt'),
+  countryCnt: stats => {
+    const items = lo.uniq(lo.map(stats, 'countryId'));
+    return { items, value: items.length };
+  },
+  brandCnt: stats => {
+    const items = lo.uniq(lo.map(stats, 'brandId'));
+    return { items, value: items.length };
+  },
+  skuCnt: stats => {
+    const items = lo.uniq(lo.map(stats, 'skuId'));
+    return { items, value: items.length };
+  },
+  pieceCnt: stats => ({ value: lo.sumBy(stats, 'pieceCnt') }),
+  litreCnt: stats => ({ value: lo.sumBy(stats, 'litreCnt') }),
 };
 
 export async function findAssortmentMap(blocks = []) {
@@ -126,13 +135,14 @@ export function checkAssortmentRequirements(assortment, levelRequirements, outle
       return null;
     }
 
-    const value = aggregator(matching);
+    const { value, items } = aggregator(matching);
 
     return {
       assortmentId,
       assortmentName,
       rule,
       value,
+      items,
       goal,
       result: value >= goal,
     };

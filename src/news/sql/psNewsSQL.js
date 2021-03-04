@@ -17,9 +17,9 @@ export const INSERT_BLOCK = `insert into #block (
 export const SELECT_SHIPMENTS = `SELECT
     o.xid as outletId,
     a.xid as articleId,
-    a.country as countryId,
-    a.brand as brandId,
-    isNull(a.articleSame, a.id) as skuId,
+    country.xid as countryId,
+    brand.xid as brandId,
+    isNull(articleSame.xid, a.xid) as skuId,
     cast(sum(sp.volume) as INT) as pieceCnt,
     sum(sp.volume * a.pieceVolume) as litreCnt,
     sum(sp.price0 * sp.volume) as shipmentCost
@@ -27,7 +27,10 @@ export const SELECT_SHIPMENTS = `SELECT
     JOIN bs.Outlet o on o.id = sh.outlet
     JOIN ch.ShipmentPosition sp on sp.shipment = sh.id
     JOIN bs.ArticleTable a on a.id = sp.article
+      LEFT JOIN bs.ArticleTable articleSame on articleSame.id = a.articleSame
     JOIN #block b on b.articleId = a.xid
+    LEFT JOIN bs.Brand on brand.id = a.brand
+    LEFT JOIN ch.Country on country.id = a.country
   WHERE sh.[date] between ? and ?
     and sh.booking in ('Бух', 'Упр')
     and sh.processed = 'true'
