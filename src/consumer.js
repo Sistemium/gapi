@@ -44,11 +44,9 @@ async function handleMessage({ Body: msgBody }) {
   const { name, param } = msgParam(msgBody);
 
   switch (name) {
-    case 'exportOutletStats':
-      await exportOutletStats(param);
-      break;
     case 'perfectShopNews':
       await perfectShopNews(param);
+      await exportOutletStats(param);
       break;
     case 'campaignsSharing':
       await campaignsSharing();
