@@ -45,11 +45,11 @@ async function shareActions(sourceMongo) {
   const minDateE = toDateString(new Date(), -1);
 
   const sourceActions = await source.aggregate([
-    { $match: lo.pick(sinceLastImported, 'ts') },
+    // { $match: lo.pick(sinceLastImported, 'ts') },
     ...toOneLookup('Campaign', 'campaignId'),
     {
       $match: {
-        ...lo.omit(sinceLastImported, 'ts'),
+        // ...lo.omit(sinceLastImported, 'ts'),
         'campaign.dateE': { $gt: minDateE },
       },
     },
