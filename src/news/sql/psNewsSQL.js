@@ -1,7 +1,7 @@
 export const DECLARE_BLOCK = `declare local temporary table #block (
 
-    blockName STRING,
-    assortmentId STRING,
+    // blockName STRING,
+    // assortmentId STRING,
     articleId STRING,
 
     primary key(articleId)
@@ -9,10 +9,10 @@ export const DECLARE_BLOCK = `declare local temporary table #block (
   )`;
 
 export const INSERT_BLOCK = `insert into #block (
-    blockName,
-    assortmentId,
+    // blockName,
+    // assortmentId,
     articleId
-  ) values (?, ?, ?)`;
+  ) values (?)`;
 
 export const SELECT_SHIPMENTS = `SELECT
     o.xid as outletId,

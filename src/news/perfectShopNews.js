@@ -2,6 +2,7 @@ import Anywhere from 'sistemium-sqlanywhere';
 import log from 'sistemium-debug';
 import lo from 'lodash';
 import eachSeries from 'async/eachSeries';
+import mapSeries from 'async/mapSeries';
 import * as mongo from 'sistemium-mongo/lib/mongoose';
 
 import { toDateString } from '../lib/dates';
@@ -59,19 +60,20 @@ async function makePSResults(anywhere, ps) {
 
   await anywhere.execImmediate(sql.DECLARE_BLOCK);
 
-  await eachSeries(blocks, async ({ name, assortmentIds }) => {
-
+  const articleIdsByBlock = await mapSeries(blocks, async ({ assortmentIds }) => {
     const assortments = await Assortment.find({ id: { $in: assortmentIds } });
-
-    const values = lo.map(assortments, ({ id, articleIds }) => lo.map(articleIds, articleId => [
-      name,
-      id,
-      articleId,
-    ]));
-
-    await anywhere.execImmediate(sql.INSERT_BLOCK, lo.flatten(values));
-
+    return lo.map(assortments, 'articleIds');
   });
+
+  const articleIds = lo.uniq(lo.flattenDeep(articleIdsByBlock));
+
+  debug(articleIds.length);
+
+  await eachSeries(lo.chunk(articleIds, 250), async chunk => {
+    await anywhere.execImmediate(sql.INSERT_BLOCK, chunk.map(id => [id]));
+  });
+
+  debug('inserted');
 
   const statsRaw = await anywhere.execImmediate(sql.SELECT_SHIPMENTS, [dateB, dateE]);
 

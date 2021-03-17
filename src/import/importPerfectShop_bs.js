@@ -4,6 +4,7 @@ import lo from 'lodash';
 import { assertVar } from '../lib/assert';
 import Assortment from '../models/marketing/Assortment';
 import PerfectShop from '../models/marketing/PerfectShop';
+import mapSeries from 'async/mapSeries';
 // import { toDateString } from '../lib/dates';
 
 const { debug } = log('import');
@@ -42,13 +43,15 @@ export default async function () {
 
   debug('campaigns', campaigns.length);
 
-  const blockCampaign = lo.find(campaigns, { _id: GOLD_ID });
+  // const blockCampaign = lo.find(campaigns, { _id: GOLD_ID });
+  //
+  // const newAssortments = assortmentFromCampaign(blockCampaign);
+  //
+  // debug('newAssortments', lo.map(newAssortments, 'name'));
+  //
+  // const mergedAssortments = await updateAssortments(newAssortments, GOLD_ID);
 
-  const newAssortments = assortmentFromCampaign(blockCampaign);
-
-  debug('newAssortments', lo.map(newAssortments, 'name'));
-
-  const mergedAssortments = await updateAssortments(newAssortments, GOLD_ID);
+  const mergedAssortments = await allAssortmentsFromCampaigns(campaigns);
 
   const ps = psFromCampaign(campaigns, mergedAssortments);
 
@@ -59,6 +62,22 @@ export default async function () {
   await mongo1C.close();
   await mongo.disconnect();
   debug('finish');
+
+}
+
+async function allAssortmentsFromCampaigns(campaigns) {
+
+  const allIds = await mapSeries(campaigns, async campaign => {
+
+    const newAssortments = assortmentFromCampaign(campaign);
+
+    return updateAssortments(newAssortments, GOLD_ID);
+
+  });
+
+  const mergedAssortmentIds = lo.uniq(lo.flatten(allIds));
+
+  return Assortment.find({ id: { $in: mergedAssortmentIds } });
 
 }
 
@@ -90,21 +109,36 @@ function parentBlockName(condition, campaign) {
   return blockName(res.name);
 }
 
-function blocksFromCampaign(campaign, mergedAssortments) {
+function blocksFromCampaign(campaigns, mergedAssortments) {
 
-  const conditions = conditionsFromCampaign(campaign);
+  const conditions = lo.flatten(lo.map(campaigns, conditionsFromCampaign));
   const allCodes = lo.map(mergedAssortments, 'code');
   const assortmentsMap = lo.mapValues(lo.keyBy(mergedAssortments, 'code'), ({ id }) => id);
 
-  return lo.map(lo.filter(conditions, 'sum'), ({ name }) => {
+  const allBlocks = lo.map(lo.filter(conditions, 'sum'), ({ name }) => {
 
     const ordString = name.match(/^\d+/);
     const assortmentCodes = lo.filter(allCodes, code => lo.startsWith(code, ordString));
     return {
+      name,
+      assortmentIds: lo.map(assortmentCodes, code => assortmentsMap[code]),
+    };
+
+  });
+
+  const blocksByName = lo.groupBy(allBlocks, 'name');
+
+  return lo.map(blocksByName, (blockAssortments, name) => {
+
+    const assortmentIds = lo.uniq(lo.flatten(lo.map(blockAssortments, 'assortmentIds')));
+
+    const ordString = name.match(/^\d+/);
+
+    return {
       name: blockName(name),
       code: name,
       ord: parseInt(ordString, 0),
-      assortmentIds: lo.map(assortmentCodes, code => assortmentsMap[code]),
+      assortmentIds,
     };
 
   });
@@ -135,7 +169,7 @@ async function updateAssortments(newAssortments, source) {
   const mergedAssortmentIds = await Assortment.merge(updated);
   debug('mergedAssortments', mergedAssortmentIds.length);
 
-  return Assortment.find({ id: { $in: mergedAssortmentIds } });
+  return mergedAssortmentIds;
 
 }
 
@@ -158,12 +192,12 @@ async function mergePS(perfectShop) {
 
 function psFromCampaign(campaigns, assortment) {
 
-  const blockCampaign = lo.find(campaigns, { _id: GOLD_ID });
+  // const blockCampaign = lo.find(campaigns, { _id: GOLD_ID });
 
   const dateB = DATE_B;
   const dateE = DATE_E;
 
-  const blocks = blocksFromCampaign(blockCampaign, assortment);
+  const blocks = blocksFromCampaign(campaigns, assortment);
 
   return {
     dateE,
