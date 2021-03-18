@@ -107,7 +107,7 @@ async function makePSResults(anywhere, ps) {
 
     const perfectShop = {
       level: bestStatIndex >= 0 ? statsByLevel[bestStatIndex].levelName : null,
-      // stats,
+      stats: lo.keyBy(statsByLevel, 'levelName'),
     };
 
     if (bestStatIndex + 1 < statsByLevel.length) {
@@ -119,8 +119,8 @@ async function makePSResults(anywhere, ps) {
         nextLevel: nextStat.levelName,
         assortmentsProgress: levelProgressInfo(a),
         blocksProgress: levelProgressInfo(b),
-        assortments: a,
-        blocks: b,
+        // assortments: a,
+        // blocks: b,
       });
 
     }
