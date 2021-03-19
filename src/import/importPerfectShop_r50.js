@@ -88,13 +88,21 @@ function conditionsFromCampaign({ variants: [{ conditions }] }) {
 function assortmentFromCampaign(campaign) {
 
   const conditions = conditionsFromCampaign(campaign);
-  const assortmentConditions = lo.filter(conditions, ({ sum, name }) => !sum || name.match(/тихие вина/));
+  const assortmentConditions = lo.filter(conditions, ({ sum, name }) => !sum || name.match(/(тихие вина|ВИНО)/));
 
-  return lo.map(assortmentConditions, ({ name, articles }) => ({
-    name: `${parentBlockName({ name }, campaign)} / ${lo.replace(name, /^[^а-я]*/i, '')}`,
-    code: name,
-    articleIds: lo.map(articles, 'articleId'),
-  }));
+  return lo.map(assortmentConditions, ({ name, articles }) => {
+
+    // const parentName = parentBlockName({ name }, campaign);
+    const firstName = blockName(name);
+    const lastName = lo.replace(name, /^БЛОК [^ ]+ - /, '');
+
+    return {
+      name: `${firstName} / ${lastName}`,
+      code: name,
+      articleIds: lo.map(articles, 'articleId'),
+    };
+
+  });
 
 }
 
@@ -109,6 +117,25 @@ function parentBlockName(condition, campaign) {
   return blockName(res.name);
 }
 
+function ordStringFromName(name) {
+  const ordString = name.match(/^\d+/);
+  const blockString = name.match(/^БЛОК [^ ]+/);
+  if (ordString) {
+    return ordString;
+  }
+  if (blockString) {
+    return blockString;
+  }
+  // throw new Error(`Unknown ordStringFromName: "${name}"`);
+  return '0';
+}
+
+// function ordFromString(string) {
+//   if (string.match(/^\d+/)) {
+//     return parseInt(string, 0);
+//   }
+// }
+
 function blocksFromCampaign(campaigns, mergedAssortments) {
 
   const conditions = lo.flatten(lo.map(campaigns, conditionsFromCampaign));
@@ -117,7 +144,7 @@ function blocksFromCampaign(campaigns, mergedAssortments) {
 
   const allBlocks = lo.map(lo.filter(conditions, 'sum'), ({ name }) => {
 
-    const ordString = name.match(/^\d+/);
+    const ordString = ordStringFromName(name);
     const assortmentCodes = lo.filter(allCodes, code => lo.startsWith(code, ordString));
     return {
       name,
@@ -126,18 +153,18 @@ function blocksFromCampaign(campaigns, mergedAssortments) {
 
   });
 
-  const blocksByName = lo.groupBy(allBlocks, 'name');
+  const blocksByName = lo.groupBy(allBlocks, ({ name }) => blockName(name));
 
   return lo.map(blocksByName, (blockAssortments, name) => {
 
     const assortmentIds = lo.uniq(lo.flatten(lo.map(blockAssortments, 'assortmentIds')));
 
-    const ordString = name.match(/^\d+/);
+    const ordString = ordStringFromName(name);
 
     return {
       name: blockName(name),
       code: name,
-      ord: parseInt(ordString, 0),
+      ord: parseInt(ordString, 0) || 0,
       assortmentIds,
     };
 
@@ -146,6 +173,13 @@ function blocksFromCampaign(campaigns, mergedAssortments) {
 }
 
 function blockName(conditionName) {
+
+  const [, r50Name] = conditionName.match(/^БЛОК ([^ ]+) /) || [];
+
+  if (r50Name) {
+    return r50Name;
+  }
+
   const res = `${lo.replace(conditionName, /^[^а-я]*/i, '')}`;
   if (res.match(/тихие вина/)) {
     return 'Вино';
@@ -227,9 +261,13 @@ function levelsFromCampaigns(campaigns, blocks, assortment) {
 }
 
 function levelBlockRequirementsFromCampaign(campaign, blocks) {
+  const conditions = lo.filter(conditionsFromCampaign(campaign), 'sum');
+  // debug('conditions', conditions[0].name);
+  // debug('blocks', blocks[0]);
   return blocks.map(({ code, name }) => ({
     name,
-    shipmentCost: lo.find(conditionsFromCampaign(campaign), { name: code }).sum,
+    shipmentCost: lo.find(conditions, c => blockName(c.name) === name)
+      .sum,
   }));
 }
 

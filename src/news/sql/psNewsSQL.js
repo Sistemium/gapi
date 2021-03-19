@@ -33,7 +33,7 @@ export const SELECT_SHIPMENTS = `SELECT
     LEFT JOIN ch.Country on country.id = a.country
   WHERE sh.[date] between ? and ?
     and sh.booking in ('Бух', 'Упр')
-    and sh.processed = 'true'
+    and sh.processed in ('true', 1)
   GROUP BY outletId, articleId, skuId, countryId, brandId
 `;
 
@@ -54,5 +54,5 @@ export const SELECT_OUTLET_SALESMAN = `SELECT
         and [date] between ? and ?
         and salesman = sm.id
         and sh.booking in ('Бух', 'Упр')
-        and sh.processed = 'true'
+        and sh.processed in ('true', 1)
     )`;
