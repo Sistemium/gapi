@@ -51,7 +51,7 @@ function hasAnyDiscount({ discount, variants }) {
     return true;
   }
 
-  return lo.find(variants, ({ articles }) => lo.find(articles, 'discount'));
+  return lo.find(variants, ({ articles }) => lo.find(articles, discountFull));
 
 }
 
