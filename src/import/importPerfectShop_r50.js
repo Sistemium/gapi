@@ -1,10 +1,11 @@
 import * as mongo from 'sistemium-mongo/lib/mongoose';
 import log from 'sistemium-debug';
 import lo from 'lodash';
+import mapSeries from 'async/mapSeries';
+
 import { assertVar } from '../lib/assert';
 import Assortment from '../models/marketing/Assortment';
 import PerfectShop from '../models/marketing/PerfectShop';
-import mapSeries from 'async/mapSeries';
 // import { toDateString } from '../lib/dates';
 
 const { debug } = log('import');
@@ -104,17 +105,6 @@ function assortmentFromCampaign(campaign) {
 
   });
 
-}
-
-function parentBlockName(condition, campaign) {
-  const conditions = conditionsFromCampaign(campaign);
-  const blockConditions = lo.filter(conditions, ({ sum }) => sum);
-  const ordString = condition.name.match(/^\d+/);
-  const res = lo.find(blockConditions, ({ name }) => lo.startsWith(name, ordString));
-  if (!res) {
-    return null;
-  }
-  return blockName(res.name);
 }
 
 function ordStringFromName(name) {
@@ -264,7 +254,7 @@ function levelBlockRequirementsFromCampaign(campaign, blocks) {
   const conditions = lo.filter(conditionsFromCampaign(campaign), 'sum');
   // debug('conditions', conditions[0].name);
   // debug('blocks', blocks[0]);
-  return blocks.map(({ code, name }) => ({
+  return blocks.map(({ name }) => ({
     name,
     shipmentCost: lo.find(conditions, c => blockName(c.name) === name)
       .sum,

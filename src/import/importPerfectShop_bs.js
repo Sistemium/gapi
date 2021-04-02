@@ -1,10 +1,11 @@
 import * as mongo from 'sistemium-mongo/lib/mongoose';
 import log from 'sistemium-debug';
 import lo from 'lodash';
+import mapSeries from 'async/mapSeries';
+
 import { assertVar } from '../lib/assert';
 import Assortment from '../models/marketing/Assortment';
 import PerfectShop from '../models/marketing/PerfectShop';
-import mapSeries from 'async/mapSeries';
 // import { toDateString } from '../lib/dates';
 
 const { debug } = log('import');
