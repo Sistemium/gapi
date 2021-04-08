@@ -43,10 +43,10 @@ export const SELECT_OUTLET_SALESMAN = `SELECT
     sg.name as salesGroupName,
     c.xid as outletId,
     sm.xid as salesmanId
-  FROM bs.salesmanView sm
+  FROM bs.PerfectShopSalesman sm
       join bs.OutletSalesmanContract so on so.salesman = sm.id
       join bs.Customer c on c.id = so.outlet
-      left join bs.SalesGroup sg on sg.id = sm.salesGroup
+      join bs.SalesGroup sg on sg.id = sm.salesGroup
   WHERE so.isDeleted = 0
     and exists (
       select * from ch.Shipment sh
