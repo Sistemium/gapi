@@ -13,8 +13,8 @@ export default async function (model) {
   await importOld();
 
   const filter = {
-    variants: { $not: { $size: 0 } },
-    'variants.conditions.articles': { $not: { $size: 0 } },
+    variants: { $elemMatch: { 'conditions.articles': { $not: { $size: 0 } } } },
+    dateE: { $gte: toDateString(new Date(), -7) },
   };
 
   const { CAMPAIGNS_PARTNER_IDS } = process.env;
@@ -45,19 +45,19 @@ export default async function (model) {
 
 }
 
-function hasAnyDiscount({ discount, variants }) {
+export function hasAnyDiscount({ discount, variants }) {
 
   if (discount) {
     return true;
   }
 
-  return lo.find(variants, ({ articles }) => lo.find(articles, discountFull));
+  return lo.find(variants, ({ articles }) => lo.find(articles, 'discount'));
 
 }
 
-function importCampaign(rawCampaign) {
+export function importCampaign(rawCampaign) {
 
-  const campaign = rawCampaign.toObject();
+  const campaign = rawCampaign.toObject ? rawCampaign.toObject() : rawCampaign;
 
   const variants = lo.map(campaign.variants, importVariant);
 
@@ -69,7 +69,7 @@ function importCampaign(rawCampaign) {
     source: 'new',
     isActive: true,
     commentText: null,
-    variants,
+    variants: lo.filter(variants),
     processing: null,
   };
 
@@ -117,6 +117,10 @@ export function importVariant(v) {
 
   if (restrictions) {
     res.restrictions = lo.pick(restrictions, ['outletId', 'partnerId', 'salesmanId']);
+  }
+
+  if (!res.articleIds.length) {
+    return null;
   }
 
   return res;
