@@ -6,6 +6,7 @@ export default new ModelSchema({
     actionId: String,
     commentText: String,
     archived: Object,
+    style: String,
     creatorAuthId: String,
   },
   tsType: 'timestamp',
