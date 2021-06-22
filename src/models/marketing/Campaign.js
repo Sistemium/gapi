@@ -22,6 +22,7 @@ export default new ModelSchema({
     territory: String,
 
     priorityId: String,
+    comments: Array,
 
     parentCampaignId: String,
 

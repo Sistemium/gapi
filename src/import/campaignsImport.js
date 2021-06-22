@@ -152,6 +152,7 @@ const SELECT_CAMPAIGNS = `SELECT
     oneTime,
     repeatable,
     needPhoto,
+    comments,
     (select max(xid) from bs.ActivityPeriod ap
           where not (date(cmp.dateE) < dateB or date(cmp.dateB) > dateE)
     ) as [campaignGroupId]
@@ -175,6 +176,7 @@ export async function importOld() {
 
   const merged = await Campaign.mergeIfChanged(data.map(item => ({
     ...item,
+    comments: item.comments ? JSON.parse(item.comments) : null,
     name: lo.filter([lo.get(priorityMap, `${item.priorityId}.name`), item.name]).join(' '),
     isActive: item.isActive === 1 || item.processing === 'published',
     oneTime: !!item.oneTime,
